@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   HOUR_MS, roundUpToUnit, canClockOut, msUntilClockOut, formatElapsed, formatCountdown,
-  localDateKey, round2, isValidUnit,
+  localDateKey, round2, isValidUnit, recordedHours, roundingOf, reminderDue, reminderOf,
 } from '../src/domain/time.js';
 
 const MIN = 60_000;
@@ -70,4 +70,63 @@ test('formatting helpers', () => {
   assert.equal(round2(0.1 + 0.2), 0.3);
   assert.equal(round2(1.005), 1.01);
   assert.equal(localDateKey(new Date(2026, 0, 5, 23, 59).getTime()), '2026-01-05');
+});
+
+// ---------------------------------------------------------------------------
+// Rounding rules + reminders
+
+const min = (m) => m * 60_000;
+
+test('default rule = round up to the minimum tracked time (same as roundUpToUnit)', () => {
+  const clock = { unitHours: 0.25 };
+  for (const ms of [min(1), min(15), min(15) + 999, min(16), min(65), min(100)]) {
+    assert.equal(recordedHours(ms, clock), roundUpToUnit(ms, 0.25), `${ms} ms`);
+  }
+  assert.equal(roundingOf(clock).isDefault, true);
+});
+
+test('round up / nearest / down with their own step', () => {
+  const up = { unitHours: 0.25, rounding: { mode: 'up', stepMinutes: 6 } };
+  const nearest = { unitHours: 0.25, rounding: { mode: 'nearest', stepMinutes: 15 } };
+  const down = { unitHours: 0.25, rounding: { mode: 'down', stepMinutes: 30 } };
+  assert.equal(recordedHours(min(67), up), 1.2); // 67 min -> 72 min
+  assert.equal(recordedHours(min(72), up), 1.2); // exact multiple stays
+  assert.equal(recordedHours(min(67), nearest), 1); // 67 -> 60
+  assert.equal(recordedHours(min(68), nearest), 1.25); // halves round up: 67.5+ -> 75
+  assert.equal(recordedHours(min(67) + 30_000, nearest), 1.25);
+  assert.equal(recordedHours(min(89), down), 1); // 89 -> 60
+  assert.equal(recordedHours(min(90), down), 1.5);
+});
+
+test('no rounding records the exact time (2 decimals); never below the minimum', () => {
+  const none = { unitHours: 0.25, rounding: { mode: 'none' } };
+  assert.equal(recordedHours(min(77), none), 1.28);
+  assert.equal(recordedHours(min(5), none), 0.25); // below the minimum -> minimum
+  const down = { unitHours: 0.5, rounding: { mode: 'down', stepMinutes: 60 } };
+  assert.equal(recordedHours(min(50), down), 0.5); // down to 0 h, raised to the 0.5 h minimum
+});
+
+test('roundingOf falls back to defaults for unknown values', () => {
+  assert.deepEqual(roundingOf({ unitHours: 0.5, rounding: { mode: 'weird', stepMinutes: -3 } }),
+    { mode: 'up', stepMinutes: null, stepHours: 0.5, isDefault: true });
+  assert.equal(roundingOf({ unitHours: 0.5, rounding: { mode: 'down', stepMinutes: 10 } }).stepHours, 10 / 60);
+});
+
+test('reminders: start after, then repeat every N minutes (or once)', () => {
+  const start = Date.UTC(2026, 10, 9, 8, 0);
+  const at = (h, m = 0) => start + h * HOUR_MS + min(m);
+  const r = { afterHours: 8, everyMinutes: 60 };
+  assert.equal(reminderDue({ startedAt: start }, r, at(7, 59)), false);
+  assert.equal(reminderDue({ startedAt: start }, r, at(8)), true);
+  assert.equal(reminderDue({ startedAt: start, remindedAt: at(8) }, r, at(8, 59)), false);
+  assert.equal(reminderDue({ startedAt: start, remindedAt: at(8) }, r, at(9)), true);
+  assert.equal(reminderDue({ startedAt: start, remindedAt: at(8) }, { afterHours: 8, everyMinutes: 0 }, at(20)), false);
+  assert.equal(reminderDue({ startedAt: start }, { afterHours: null, everyMinutes: 60 }, at(20)), false);
+  assert.equal(reminderDue(null, r, at(20)), false);
+});
+
+test('reminderOf: defaults for clocks without the setting, explicit off is kept', () => {
+  assert.deepEqual(reminderOf({}), { afterHours: 8, everyMinutes: 60 });
+  assert.deepEqual(reminderOf({ reminder: { afterHours: null, everyMinutes: 60 } }), { afterHours: null, everyMinutes: 60 });
+  assert.deepEqual(reminderOf({ reminder: { afterHours: 4, everyMinutes: 0 } }), { afterHours: 4, everyMinutes: 0 });
 });

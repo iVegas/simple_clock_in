@@ -7,7 +7,8 @@ import ClocksView from './ClocksView.js';
 import ClockEditor from './ClockEditor.js';
 import SetupView from './SetupView.js';
 import SetupAssistant from './SetupAssistant.js';
-import { InstallBanner, UpdateBanner, Toasts } from './Banners.js';
+import { InstallBanner, UpdateBanner, ReminderBanner, Toasts } from './Banners.js';
+import { dismissReminder } from '../state/reminders.js';
 import { route, go } from '../router.js';
 import { store } from '../state/store.js';
 import { MOCK } from '../mode.js';
@@ -20,6 +21,7 @@ const VIEWS = {
   editor: 'ClockEditor',
   setup: 'SetupView',
   google: 'SetupAssistant',
+  select: 'ClockView',
 };
 const TABS = [
   { name: 'clock', href: '#/', icon: 'clock' },
@@ -29,12 +31,20 @@ const TABS = [
 
 export default {
   name: 'App',
-  components: { Icon, ClockView, ReportView, ClocksView, ClockEditor, SetupView, SetupAssistant, InstallBanner, UpdateBanner, Toasts },
+  components: { Icon, ClockView, ReportView, ClocksView, ClockEditor, SetupView, SetupAssistant, InstallBanner, UpdateBanner, ReminderBanner, Toasts },
   setup() {
     watchEffect(() => {
       // First run: nothing to show until a clock exists.
       if (!store.clocks.length && !['setup', 'google'].includes(route.name)) go('/setup');
       if (store.clocks.length && route.name === 'setup') go('/');
+      if (route.name === 'select') { // #/c/<id>: make that clock active (from a reminder)
+        const clock = store.clocks.find((c) => c.id === route.params.id);
+        if (clock) {
+          store.activeClockId = clock.id;
+          dismissReminder(clock);
+        }
+        go('/');
+      }
       if (store.clocks.length && !store.clocks.some((c) => c.id === store.activeClockId)) store.activeClockId = store.clocks[0].id;
     });
 
@@ -60,6 +70,7 @@ export default {
 
       <InstallBanner/>
       <UpdateBanner/>
+      <ReminderBanner/>
 
       <main class="content">
         <component :is="view" :key="route.path" v-bind="route.params"/>

@@ -44,9 +44,20 @@
     "discardConfirm": "Touchez à nouveau pour abandonner la session",
     "discarded": "Session abandonnée.",
     "today": "Aujourd’hui",
-    "rateLine": "{rate}/h · arrondi au multiple de {unit} supérieur",
+    "rateLine": "{rate}/h · {rule}",
     "alsoRunning": "Également en cours :",
     "addManually": "Ajouter du temps manuellement"
+  },
+  "rounding": {
+    "up": "arrondi vers le haut ({step})",
+    "nearest": "arrondi au plus proche ({step})",
+    "down": "arrondi vers le bas ({step})",
+    "none": "sans arrondi",
+    "withMin": "min. {min}, {rule}"
+  },
+  "reminder": {
+    "title": "« {name} » tourne toujours",
+    "body": "En cours depuis {duration}."
   },
   "save": {
     "noSheet": "Enregistré sur cet appareil : {hours}. Connectez une feuille pour synchroniser.",
@@ -114,7 +125,7 @@
     "rate": "Taux horaire",
     "comment": "Commentaire (facultatif)",
     "commentPlaceholder": "p. ex. Oubli de pointage",
-    "rounded": "Enregistre {hours} : arrondi au multiple de {unit} supérieur.",
+    "rounded": "Enregistre {hours} : {rule}.",
     "addsToDay": "S’ajoute aux {hours} déjà enregistrées ce jour-là.",
     "dayRate": "Toute la journée utilisera le nouveau taux.",
     "errDate": "Choisissez une date.",
@@ -190,7 +201,7 @@
     "custom": "Autre",
     "customAria": "Durée minimale personnalisée en heures",
     "hours": "heures",
-    "unitHint": "Vous pourrez terminer après {minutes} min. Chaque session est arrondie au multiple de {unit} supérieur.",
+    "unitHint": "Vous pourrez terminer après {minutes} min. Chaque saisie compte au moins {unit}, {rule}.",
     "errName": "Donnez un nom à la pointeuse.",
     "errCurrency": "Saisissez une devise, p. ex. EUR.",
     "errRate": "Saisissez le taux horaire actuel.",
@@ -239,7 +250,25 @@
     "viewHint": "Saisies les plus récentes en haut, saisies payées masquées par un filtre (modifiable par tous depuis la ligne d’en-tête dans Sheets), et totaux en {range}. Les nouveaux onglets l’ont automatiquement.",
     "applyView": "Appliquer à cet onglet",
     "viewNeedsLayout": "Disponible une fois que l’onglet correspond à la structure.",
-    "viewApplied": "Affichage appliqué : plus récentes en haut, payées masquées, totaux en {range}."
+    "viewApplied": "Affichage appliqué : plus récentes en haut, payées masquées, totaux en {range}.",
+    "roundingTitle": "Arrondi",
+    "roundingHint": "Comment la durée de chaque session ou saisie manuelle est arrondie. Une saisie n’enregistre jamais moins que la durée minimale comptée.",
+    "roundUp": "Supérieur",
+    "roundNearest": "Au plus proche",
+    "roundDown": "Inférieur",
+    "roundNone": "Aucun",
+    "roundingStep": "Pas",
+    "stepSameAsMin": "Durée minimale comptée ({unit})",
+    "roundingExamples": "Exemples :",
+    "reminderTitle": "Rappel quand la pointeuse tourne",
+    "reminderAfter": "Rappeler après",
+    "reminderEvery": "Puis toutes les",
+    "reminderOff": "Désactivé",
+    "reminderOnce": "Une seule fois",
+    "reminderHint": "Affiché dans l’application, et en notification système tant que l’application est ouverte ou en arrière-plan. Une application fermée ne peut pas vous rappeler : il n’y a pas de serveur.",
+    "notifyAllow": "Autoriser les notifications",
+    "notifyOn": "Les notifications système sont activées.",
+    "notifyBlocked": "Les notifications sont bloquées pour ce site dans les réglages du navigateur."
   },
   "sheetHeaders": {
     "date": "Date",

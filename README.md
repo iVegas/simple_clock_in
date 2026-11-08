@@ -5,14 +5,19 @@ every session in **your own Google Sheet**. Hosted on GitHub Pages, which is als
 copies get their updates.
 
 - **Clock in / Clock out**. Clock out unlocks once the *minimum tracked time* has passed.
-  Every session is rounded **up** to a multiple of that time.
+  Every entry records at least that time and is rounded by the clock's **rounding rule**: up (the
+  default), to the nearest or down, by 1–60 minutes or by the minimum itself, or not at all.
+- **Reminders** for a clock left running: after a chosen time (default 8 h), then every 15 min to
+  2 h, or once. They show as a banner with *Clock out*, plus a system notification while the app is
+  open or in the background (once notifications are allowed). Without a server, a closed app can't
+  remind you: the banner appears the next time it opens.
 - **Multiple clocks** (one per client/job). Each has its own currency, hourly rate, minimum time,
-  sheet tab and header names, and they can run at the same time.
+  rounding rule, reminder, sheet tab and header names, and they can run at the same time.
 - **Report**: what is *due now*, filters by month and paid status, payouts grouped by date,
   and a **Mark paid** button that writes today's date into the sheet (with Undo). Tap an entry to
   **cancel its payment** or **delete** it; both ask for confirmation first.
 - **Manual entries** ("forgot to clock in"): date, hours, rate and an optional comment. They follow
-  the same rules as a clocked session (rounded up, added to the day's unpaid row).
+  the same rules as a clocked session (minimum, rounding rule, added to the day's unpaid row).
 - **Languages**: English, Ukrainian, Polish, German, French, Spanish and Portuguese. The app follows
   the browser language or the choice in *Clocks → App*. Only English ships with the app; another
   language is downloaded when chosen, and only the one in use is kept on the device for offline use.
@@ -35,7 +40,7 @@ Each clock writes to one tab with this layout (row 1 = header):
   A session that crosses midnight counts toward the day it started. A day already marked paid
   is never changed: more work on that day goes into a separate, unpaid row.
 - **Manual entries** follow the same rule. Their comment goes into F, appended with "; " when the
-  day already has one. Hours are rounded up to the clock's minimum tracked time.
+  day already has one. Hours follow the clock's minimum and rounding rule.
 - **Delete** removes the entry's whole row (rows below move up, their formulas follow).
   **Cancel payment** clears the paid cell. Both first re-read the row and stop if it changed.
 - **paid** holds the payout date. Older `TRUE`/`FALSE` (checkbox) values are still understood:

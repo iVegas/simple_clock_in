@@ -8,6 +8,7 @@ const ROUTES = [
   ['/clock/:id', 'editor'],
   ['/setup', 'setup'],
   ['/google-setup', 'google'],
+  ['/c/:id', 'select'], // open a clock (reminder notifications link here)
 ];
 
 function match(pattern, path) {

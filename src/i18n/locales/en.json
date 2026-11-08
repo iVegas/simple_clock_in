@@ -44,9 +44,20 @@
     "discardConfirm": "Tap again to discard this session",
     "discarded": "Session discarded.",
     "today": "Today",
-    "rateLine": "{rate}/hour · rounded up to {unit}",
+    "rateLine": "{rate}/hour · {rule}",
     "alsoRunning": "Also running:",
     "addManually": "Add time manually"
+  },
+  "rounding": {
+    "up": "rounded up to {step}",
+    "nearest": "rounded to the nearest {step}",
+    "down": "rounded down to {step}",
+    "none": "not rounded",
+    "withMin": "min {min}, {rule}"
+  },
+  "reminder": {
+    "title": "“{name}” is still running",
+    "body": "Running for {duration}."
   },
   "save": {
     "noSheet": "Saved {hours} on this device. Connect a spreadsheet to sync it.",
@@ -114,7 +125,7 @@
     "rate": "Cost per hour",
     "comment": "Comment (optional)",
     "commentPlaceholder": "e.g. Forgot to clock in",
-    "rounded": "Records {hours}: rounded up to {unit}.",
+    "rounded": "Records {hours}: {rule}.",
     "addsToDay": "Adds to the {hours} already recorded that day.",
     "dayRate": "The whole day will use the new rate.",
     "errDate": "Pick a date.",
@@ -190,7 +201,7 @@
     "custom": "Custom",
     "customAria": "Custom minimum tracked time in hours",
     "hours": "hours",
-    "unitHint": "Clock out unlocks after {minutes} min. Every session is rounded up to the next multiple of {unit}.",
+    "unitHint": "Clock out unlocks after {minutes} min. Every entry records at least {unit}, {rule}.",
     "errName": "Give the clock a name.",
     "errCurrency": "Enter a currency, e.g. USD.",
     "errRate": "Enter the current cost of an hour.",
@@ -239,7 +250,25 @@
     "viewHint": "Newest entries first, paid entries hidden by a filter (anyone can change it from the header row in Sheets), and totals in {range}. New tabs get this automatically.",
     "applyView": "Apply to this tab",
     "viewNeedsLayout": "Available once the tab matches the layout.",
-    "viewApplied": "Sheet view applied: newest first, paid hidden, totals in {range}."
+    "viewApplied": "Sheet view applied: newest first, paid hidden, totals in {range}.",
+    "roundingTitle": "Rounding",
+    "roundingHint": "How the duration of each session or manual entry is rounded. An entry never records less than the minimum tracked time.",
+    "roundUp": "Up",
+    "roundNearest": "Nearest",
+    "roundDown": "Down",
+    "roundNone": "None",
+    "roundingStep": "Round to",
+    "stepSameAsMin": "Minimum tracked time ({unit})",
+    "roundingExamples": "Examples:",
+    "reminderTitle": "Reminder while running",
+    "reminderAfter": "Remind after",
+    "reminderEvery": "Then every",
+    "reminderOff": "Off",
+    "reminderOnce": "Only once",
+    "reminderHint": "Shown in the app, and as a system notification while the app is open or in the background. A closed app can’t remind you: there is no server.",
+    "notifyAllow": "Allow notifications",
+    "notifyOn": "System notifications are on.",
+    "notifyBlocked": "Notifications are blocked for this site in the browser settings."
   },
   "sheetHeaders": {
     "date": "Date",

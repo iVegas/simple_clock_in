@@ -34,6 +34,7 @@ const ASSETS = [
   './src/components/Icon.js',
   './src/components/LanguageSelect.js',
   './src/components/Modal.js',
+  './src/components/phrases.js',
   './src/components/ReportView.js',
   './src/components/SetupAssistant.js',
   './src/components/SetupView.js',
@@ -59,6 +60,7 @@ const ASSETS = [
   './src/services/timesheet.js',
   './src/services/util.js',
   './src/state/now.js',
+  './src/state/reminders.js',
   './src/state/store.js',
   './src/state/toast.js',
 ];
@@ -103,6 +105,19 @@ self.addEventListener('message', (event) => {
   // The page asks the waiting worker to take over when the user taps "Reload".
   if (event.data?.type === 'SKIP_WAITING') self.skipWaiting();
   if (event.data?.type === 'LOCALE') event.waitUntil(keepLocale(event.data.url).catch(() => {}));
+});
+
+// Reminder notification tapped: bring the app forward on that clock (data.url = "#/c/<id>").
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const url = new URL(event.notification.data?.url ?? '', self.registration.scope).href;
+  event.waitUntil((async () => {
+    const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    const client = windows.find((c) => c.url.startsWith(self.registration.scope));
+    if (!client) return self.clients.openWindow(url);
+    await client.focus();
+    return client.navigate(url).catch(() => client.postMessage({ type: 'OPEN', url }));
+  })());
 });
 
 self.addEventListener('fetch', (event) => {

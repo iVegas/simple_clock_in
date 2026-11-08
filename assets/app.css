@@ -633,6 +633,12 @@ legend + * { clear: both; }
   .banner-text span { color: var(--muted); }
 }
 .update-banner { border-color: var(--primary); background: var(--primary-soft); }
+.reminder-banner {
+  border-color: var(--amber-border);
+  background: var(--amber-soft);
+  > .icon { color: var(--amber); width: 1.5rem; height: 1.5rem; }
+}
+.banner-link { padding: 0; border: none; background: none; color: inherit; font: inherit; text-align: start; cursor: pointer; }
 
 .tabbar {
   position: fixed;

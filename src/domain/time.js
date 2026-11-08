@@ -59,3 +59,69 @@ export function msUntilClockOut(startedAt, now, unitHours) {
 export function canClockOut(startedAt, now, unitHours) {
   return isValidUnit(unitHours) && msUntilClockOut(startedAt, now, unitHours) === 0;
 }
+
+// ---------------------------------------------------------------------------
+// Rounding rule (advanced clock setting). The minimum tracked time still unlocks Clock out and is
+// the least an entry records; the rule rounds the duration by its own step.
+
+export const ROUNDING_MODES = ['up', 'nearest', 'down', 'none'];
+/** Step choices in minutes; no step = the clock's minimum tracked time. */
+export const ROUNDING_STEPS = [1, 5, 6, 10, 12, 15, 20, 30, 60];
+
+/** Clock's rounding rule with defaults (up, step = minimum tracked time: the original behaviour). */
+export function roundingOf({ unitHours, rounding } = {}) {
+  const mode = ROUNDING_MODES.includes(rounding?.mode) ? rounding.mode : 'up';
+  const stepMinutes = Number(rounding?.stepMinutes) > 0 ? Number(rounding.stepMinutes) : null;
+  return { mode, stepMinutes, stepHours: stepMinutes ? stepMinutes / 60 : unitHours, isDefault: mode === 'up' && !stepMinutes };
+}
+
+/**
+ * Hours an entry of this duration records under the clock's rule.
+ * up: next multiple of the step (1 s slack keeps exact multiples); nearest: halves round up;
+ * down: previous multiple; none: exact (2 decimals = 36 s). Never less than the minimum tracked time.
+ * @param {{unitHours: number, rounding?: {mode, stepMinutes}}} clock
+ */
+export function recordedHours(elapsedMs, clock) {
+  if (!isValidUnit(clock?.unitHours)) throw new RangeError('Minimum tracked time must be greater than 0');
+  const { mode, stepHours } = roundingOf(clock);
+  const sec = Math.max(0, Math.floor(elapsedMs / 1000));
+  let hours;
+  if (mode === 'none') {
+    hours = round2(sec / 3600);
+  } else {
+    const stepSec = Math.max(1, Math.round(stepHours * 3600));
+    const units = mode === 'up' ? Math.ceil(Math.max(0, sec - SLACK_SECONDS) / stepSec)
+      : mode === 'down' ? Math.floor(sec / stepSec)
+        : Math.floor(sec / stepSec + 0.5);
+    hours = round2((units * stepSec) / 3600);
+  }
+  return Math.max(round2(clock.unitHours), hours);
+}
+
+// ---------------------------------------------------------------------------
+// Reminder for a clock left running (advanced clock setting).
+
+export const REMINDER_AFTER_HOURS = [1, 2, 3, 4, 5, 6, 8, 10, 12];
+export const REMINDER_EVERY_MINUTES = [15, 30, 60, 120];
+export const DEFAULT_REMINDER = Object.freeze({ afterHours: 8, everyMinutes: 60 });
+
+/** Clock's reminder: afterHours null = off; everyMinutes 0 = remind once. */
+export function reminderOf(clock) {
+  const r = clock?.reminder;
+  if (!r) return { ...DEFAULT_REMINDER };
+  return {
+    afterHours: Number(r.afterHours) > 0 ? Number(r.afterHours) : null,
+    everyMinutes: Number(r.everyMinutes) > 0 ? Number(r.everyMinutes) : 0,
+  };
+}
+
+/**
+ * Is a reminder due for this running session now?
+ * @param {{startedAt: number, remindedAt?: number}|null} running
+ */
+export function reminderDue(running, reminder, now) {
+  if (!running || !reminder?.afterHours) return false;
+  if (now - running.startedAt < reminder.afterHours * HOUR_MS) return false;
+  if (!running.remindedAt) return true;
+  return reminder.everyMinutes > 0 && now - running.remindedAt >= reminder.everyMinutes * 60_000;
+}

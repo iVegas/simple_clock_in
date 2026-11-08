@@ -44,9 +44,20 @@
     "discardConfirm": "Toque de novo para descartar a sessão",
     "discarded": "Sessão descartada.",
     "today": "Hoje",
-    "rateLine": "{rate}/h · arredondado para cima a cada {unit}",
+    "rateLine": "{rate}/h · {rule}",
     "alsoRunning": "Também em andamento:",
     "addManually": "Adicionar tempo manualmente"
+  },
+  "rounding": {
+    "up": "arredondado para cima a cada {step}",
+    "nearest": "arredondado para os {step} mais próximos",
+    "down": "arredondado para baixo a cada {step}",
+    "none": "sem arredondamento",
+    "withMin": "mín. {min}, {rule}"
+  },
+  "reminder": {
+    "title": "“{name}” ainda está em andamento",
+    "body": "Em andamento há {duration}."
   },
   "save": {
     "noSheet": "Salvo neste dispositivo: {hours}. Conecte uma planilha para sincronizar.",
@@ -114,7 +125,7 @@
     "rate": "Valor por hora",
     "comment": "Comentário (opcional)",
     "commentPlaceholder": "ex.: Esqueci de iniciar o relógio",
-    "rounded": "Registra {hours}: arredondado para cima a cada {unit}.",
+    "rounded": "Registra {hours}: {rule}.",
     "addsToDay": "Soma-se às {hours} já registradas nesse dia.",
     "dayRate": "O dia inteiro passará a usar o novo valor.",
     "errDate": "Escolha uma data.",
@@ -190,7 +201,7 @@
     "custom": "Outro",
     "customAria": "Tempo mínimo personalizado em horas",
     "hours": "horas",
-    "unitHint": "Encerrar fica disponível após {minutes} min. Cada sessão é arredondada para cima ao próximo múltiplo de {unit}.",
+    "unitHint": "Encerrar fica disponível após {minutes} min. Cada registro tem no mínimo {unit}, {rule}.",
     "errName": "Dê um nome ao relógio.",
     "errCurrency": "Informe uma moeda, ex.: BRL.",
     "errRate": "Informe o valor atual da hora.",
@@ -239,7 +250,25 @@
     "viewHint": "Registros mais recentes no topo, pagos ocultos por um filtro (qualquer pessoa pode alterá-lo na linha de cabeçalho no Planilhas) e totais em {range}. Abas novas recebem isso automaticamente.",
     "applyView": "Aplicar a esta aba",
     "viewNeedsLayout": "Disponível quando a aba corresponder à estrutura.",
-    "viewApplied": "Visualização aplicada: mais recentes no topo, pagos ocultos, totais em {range}."
+    "viewApplied": "Visualização aplicada: mais recentes no topo, pagos ocultos, totais em {range}.",
+    "roundingTitle": "Arredondamento",
+    "roundingHint": "Como a duração de cada sessão ou registro manual é arredondada. Um registro nunca é menor que o tempo mínimo registrado.",
+    "roundUp": "Para cima",
+    "roundNearest": "Mais próximo",
+    "roundDown": "Para baixo",
+    "roundNone": "Nenhum",
+    "roundingStep": "Intervalo",
+    "stepSameAsMin": "Tempo mínimo registrado ({unit})",
+    "roundingExamples": "Exemplos:",
+    "reminderTitle": "Lembrete com o relógio em andamento",
+    "reminderAfter": "Lembrar após",
+    "reminderEvery": "Depois a cada",
+    "reminderOff": "Desligado",
+    "reminderOnce": "Só uma vez",
+    "reminderHint": "Aparece no app e como notificação do sistema enquanto o app está aberto ou em segundo plano. Um app fechado não consegue lembrar você: não há servidor.",
+    "notifyAllow": "Permitir notificações",
+    "notifyOn": "As notificações do sistema estão ativadas.",
+    "notifyBlocked": "As notificações deste site estão bloqueadas nas configurações do navegador."
   },
   "sheetHeaders": {
     "date": "Data",

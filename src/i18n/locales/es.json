@@ -44,9 +44,20 @@
     "discardConfirm": "Toca de nuevo para descartar la sesión",
     "discarded": "Sesión descartada.",
     "today": "Hoy",
-    "rateLine": "{rate}/h · redondeo hacia arriba a {unit}",
+    "rateLine": "{rate}/h · {rule}",
     "alsoRunning": "También en marcha:",
     "addManually": "Añadir tiempo manualmente"
+  },
+  "rounding": {
+    "up": "redondeo hacia arriba a {step}",
+    "nearest": "redondeo a los {step} más cercanos",
+    "down": "redondeo hacia abajo a {step}",
+    "none": "sin redondeo",
+    "withMin": "mín. {min}, {rule}"
+  },
+  "reminder": {
+    "title": "«{name}» sigue en marcha",
+    "body": "En marcha desde hace {duration}."
   },
   "save": {
     "noSheet": "Guardado en este dispositivo: {hours}. Conecta una hoja para sincronizar.",
@@ -114,7 +125,7 @@
     "rate": "Tarifa por hora",
     "comment": "Comentario (opcional)",
     "commentPlaceholder": "p. ej. Olvidé fichar",
-    "rounded": "Registra {hours}: redondeado hacia arriba a {unit}.",
+    "rounded": "Registra {hours}: {rule}.",
     "addsToDay": "Se suma a las {hours} ya registradas ese día.",
     "dayRate": "Todo el día usará la nueva tarifa.",
     "errDate": "Elige una fecha.",
@@ -190,7 +201,7 @@
     "custom": "Otro",
     "customAria": "Tiempo mínimo personalizado en horas",
     "hours": "horas",
-    "unitHint": "Podrás fichar la salida tras {minutes} min. Cada sesión se redondea hacia arriba al siguiente múltiplo de {unit}.",
+    "unitHint": "Podrás fichar la salida tras {minutes} min. Cada registro anota al menos {unit}, {rule}.",
     "errName": "Ponle un nombre al reloj.",
     "errCurrency": "Introduce una moneda, p. ej. EUR.",
     "errRate": "Introduce la tarifa por hora actual.",
@@ -239,7 +250,25 @@
     "viewHint": "Registros más recientes arriba, los pagados ocultos con un filtro (cualquiera puede cambiarlo desde la fila de encabezado en Sheets) y totales en {range}. Las pestañas nuevas lo reciben automáticamente.",
     "applyView": "Aplicar a esta pestaña",
     "viewNeedsLayout": "Disponible cuando la pestaña coincida con la estructura.",
-    "viewApplied": "Vista aplicada: más recientes arriba, pagados ocultos, totales en {range}."
+    "viewApplied": "Vista aplicada: más recientes arriba, pagados ocultos, totales en {range}.",
+    "roundingTitle": "Redondeo",
+    "roundingHint": "Cómo se redondea la duración de cada sesión o registro manual. Un registro nunca anota menos que el tiempo mínimo registrado.",
+    "roundUp": "Arriba",
+    "roundNearest": "Al más cercano",
+    "roundDown": "Abajo",
+    "roundNone": "Sin redondeo",
+    "roundingStep": "Paso",
+    "stepSameAsMin": "Tiempo mínimo registrado ({unit})",
+    "roundingExamples": "Ejemplos:",
+    "reminderTitle": "Recordatorio con el reloj en marcha",
+    "reminderAfter": "Recordar tras",
+    "reminderEvery": "Luego cada",
+    "reminderOff": "Desactivado",
+    "reminderOnce": "Solo una vez",
+    "reminderHint": "Se muestra en la app y como notificación del sistema mientras la app está abierta o en segundo plano. Una app cerrada no puede recordártelo: no hay servidor.",
+    "notifyAllow": "Permitir notificaciones",
+    "notifyOn": "Las notificaciones del sistema están activadas.",
+    "notifyBlocked": "Las notificaciones de este sitio están bloqueadas en los ajustes del navegador."
   },
   "sheetHeaders": {
     "date": "Fecha",

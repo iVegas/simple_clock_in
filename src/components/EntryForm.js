@@ -1,11 +1,12 @@
 // Manual entry ("forgot to clock in"): date + hours, saved like a clocked session.
-// Hours are rounded up to the clock's minimum tracked time, same rule as the timer.
+// Hours follow the clock's rounding rule and minimum, same as the timer.
 import { ref, reactive, computed } from 'vue';
 import Modal from './Modal.js';
 import { t } from '../i18n/index.js';
 import { store } from '../state/store.js';
 import { addEntry } from '../services/sync.js';
-import { localDateKey, roundUpToUnit, round2 } from '../domain/time.js';
+import { localDateKey, recordedHours, round2 } from '../domain/time.js';
+import { roundingText } from './phrases.js';
 import { formatHours } from '../domain/format.js';
 
 export default {
@@ -20,7 +21,7 @@ export default {
 
     const validHours = computed(() => typeof form.hours === 'number' && form.hours > 0 && form.hours <= 24);
     const recorded = computed(() => (validHours.value
-      ? roundUpToUnit(Math.round(form.hours * 3600) * 1000, props.clock.unitHours) : 0));
+      ? recordedHours(Math.round(form.hours * 3600) * 1000, props.clock) : 0));
     const rounded = computed(() => validHours.value && recorded.value !== round2(form.hours));
     // The day's unpaid row this entry will be added to (same rule as clock out).
     const existing = computed(() => (store.cache[props.clock.id]?.records ?? [])
@@ -40,7 +41,7 @@ export default {
       addEntry(props.clock, entry);
     }
 
-    return { today, form, touched, errors, recorded, rounded, existing, submit, formatHours };
+    return { today, form, touched, errors, recorded, rounded, existing, submit, formatHours, roundingText };
   },
   template: /* html */`
     <Modal :title="$t('entryForm.title')" @close="$emit('close')">
@@ -58,7 +59,7 @@ export default {
             <span v-if="touched && errors.hours" class="field-error">{{ errors.hours }}</span>
           </label>
         </div>
-        <p v-if="rounded" class="hint">{{ $t('entryForm.rounded', { hours: formatHours(recorded), unit: formatHours(clock.unitHours) }) }}</p>
+        <p v-if="rounded" class="hint">{{ $t('entryForm.rounded', { hours: formatHours(recorded), rule: roundingText(clock, { withMin: true }) }) }}</p>
         <p v-if="existing" class="hint">
           {{ $t('entryForm.addsToDay', { hours: formatHours(existing.hours) }) }}
           <template v-if="existing.rate !== null && existing.rate !== form.rate">{{ $t('entryForm.dayRate') }}</template>

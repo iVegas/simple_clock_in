@@ -44,9 +44,20 @@
     "discardConfirm": "Nochmals tippen, um die Sitzung zu verwerfen",
     "discarded": "Sitzung verworfen.",
     "today": "Heute",
-    "rateLine": "{rate}/Std. · aufgerundet auf {unit}",
+    "rateLine": "{rate}/Std. · {rule}",
     "alsoRunning": "Läuft auch:",
     "addManually": "Zeit manuell hinzufügen"
+  },
+  "rounding": {
+    "up": "aufgerundet auf {step}",
+    "nearest": "gerundet auf {step}",
+    "down": "abgerundet auf {step}",
+    "none": "nicht gerundet",
+    "withMin": "min. {min}, {rule}"
+  },
+  "reminder": {
+    "title": "„{name}“ läuft noch",
+    "body": "Läuft seit {duration}."
   },
   "save": {
     "noSheet": "{hours} auf diesem Gerät gespeichert. Verbinde eine Tabelle, um zu synchronisieren.",
@@ -114,7 +125,7 @@
     "rate": "Stundensatz",
     "comment": "Kommentar (optional)",
     "commentPlaceholder": "z. B. Einstempeln vergessen",
-    "rounded": "Erfasst {hours}: aufgerundet auf {unit}.",
+    "rounded": "Erfasst {hours}: {rule}.",
     "addsToDay": "Wird zu den bereits erfassten {hours} an diesem Tag addiert.",
     "dayRate": "Für den ganzen Tag gilt dann der neue Satz.",
     "errDate": "Wähle ein Datum.",
@@ -190,7 +201,7 @@
     "custom": "Eigene",
     "customAria": "Eigene minimale Erfassungszeit in Stunden",
     "hours": "Stunden",
-    "unitHint": "Ausstempeln ist nach {minutes} Min. möglich. Jede Sitzung wird auf das nächste Vielfache von {unit} aufgerundet.",
+    "unitHint": "Ausstempeln ist nach {minutes} Min. möglich. Jeder Eintrag erfasst mindestens {unit}, {rule}.",
     "errName": "Gib der Uhr einen Namen.",
     "errCurrency": "Gib eine Währung ein, z. B. EUR.",
     "errRate": "Gib den aktuellen Stundensatz ein.",
@@ -239,7 +250,25 @@
     "viewHint": "Neueste Einträge oben, bezahlte per Filter ausgeblendet (jeder kann ihn in der Kopfzeile in Sheets ändern) und Summen in {range}. Neue Blätter bekommen das automatisch.",
     "applyView": "Auf dieses Blatt anwenden",
     "viewNeedsLayout": "Verfügbar, sobald das Blatt zum Aufbau passt.",
-    "viewApplied": "Ansicht angewendet: neueste oben, bezahlte ausgeblendet, Summen in {range}."
+    "viewApplied": "Ansicht angewendet: neueste oben, bezahlte ausgeblendet, Summen in {range}.",
+    "roundingTitle": "Rundung",
+    "roundingHint": "Wie die Dauer jeder Sitzung oder manuellen Eintragung gerundet wird. Ein Eintrag erfasst nie weniger als die minimale Erfassungszeit.",
+    "roundUp": "Aufrunden",
+    "roundNearest": "Runden",
+    "roundDown": "Abrunden",
+    "roundNone": "Keine",
+    "roundingStep": "Schritt",
+    "stepSameAsMin": "Minimale Erfassungszeit ({unit})",
+    "roundingExamples": "Beispiele:",
+    "reminderTitle": "Erinnerung bei laufender Uhr",
+    "reminderAfter": "Erinnern nach",
+    "reminderEvery": "Dann alle",
+    "reminderOff": "Aus",
+    "reminderOnce": "Nur einmal",
+    "reminderHint": "Erscheint in der App und als Systembenachrichtigung, solange die App geöffnet ist oder im Hintergrund läuft. Eine geschlossene App kann nicht erinnern: Es gibt keinen Server.",
+    "notifyAllow": "Benachrichtigungen erlauben",
+    "notifyOn": "Systembenachrichtigungen sind an.",
+    "notifyBlocked": "Benachrichtigungen sind für diese Seite in den Browsereinstellungen blockiert."
   },
   "sheetHeaders": {
     "date": "Datum",

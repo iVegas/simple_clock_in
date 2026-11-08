@@ -6,6 +6,7 @@ import { toast } from '../state/toast.js';
 import { t } from '../i18n/index.js';
 import { uid } from './util.js';
 import { formatHours, formatDay } from '../domain/format.js';
+import { localDateKey, canClockOut, recordedHours } from '../domain/time.js';
 import { describeError } from './errors.js';
 import { loadSheet, setupSheet, recordSession, refreshSheetView } from './timesheet.js';
 
@@ -111,4 +112,14 @@ export async function addEntry(clock, entry) {
   } catch (err) {
     toast(t('save.failed', { hours, error: describeError(err) }), { tone: 'warn', timeout: 7000 });
   }
+}
+
+/** Stop the clock and record the session under its rounding rule (no-op before the minimum). */
+export async function clockOut(clock) {
+  if (!clock?.running) return; // double tap
+  const { startedAt } = clock.running;
+  const endedAt = Date.now();
+  if (!canClockOut(startedAt, endedAt, clock.unitHours)) return;
+  clock.running = null;
+  await addEntry(clock, { date: localDateKey(startedAt), hours: recordedHours(endedAt - startedAt, clock), rate: clock.rate, startedAt, endedAt });
 }

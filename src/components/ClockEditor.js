@@ -18,8 +18,9 @@ import { uid, spreadsheetUrl } from '../services/util.js';
 import {
   DATA_RANGE, validateStructure, expectedHeader, headersOf, headersValid, isDefaultHeaders, headersFromSheet,
 } from '../domain/ledger.js';
-import { formatHours } from '../domain/format.js';
-import { UNIT_PRESETS, isValidUnit, round2 } from '../domain/time.js';
+import { formatHours, formatDuration } from '../domain/format.js';
+import { UNIT_PRESETS, HOUR_MS, isValidUnit, round2, roundingOf, reminderOf } from '../domain/time.js';
+import { roundingText } from './phrases.js';
 
 const CURRENCIES = ['USD', 'EUR', 'GBP', 'UAH', 'PLN', 'CZK', 'CHF', 'CAD', 'AUD', 'SEK', 'NOK', 'DKK', 'JPY', 'INR', 'BRL', 'MXN'];
 
@@ -43,11 +44,19 @@ export default {
       sheetTitle: existing?.sheetTitle ?? '',
     });
     const headers = reactive(headersOf(existing?.headers)); // advanced: header names
+    const { mode, stepMinutes } = roundingOf(existing ?? {});
+    const rounding = reactive({ mode, stepMinutes }); // advanced: rounding rule
+    const reminder = reactive(reminderOf(existing)); // advanced: running-clock reminder
     const initialUnit = existing?.unitHours ?? 0.25;
     const unitChoice = ref(UNIT_PRESETS.includes(initialUnit) ? initialUnit : 'custom');
     const customUnit = ref(unitChoice.value === 'custom' ? initialUnit : '');
     const unitHours = computed(() => (unitChoice.value === 'custom' ? Number(customUnit.value) : unitChoice.value));
     const unitMinutes = computed(() => (isValidUnit(unitHours.value) ? round2(unitHours.value * 60) : null));
+    const unitHint = computed(() => (unitMinutes.value ? t('editor.unitHint', {
+      minutes: unitMinutes.value,
+      unit: formatDuration(unitHours.value * HOUR_MS),
+      rule: roundingText({ unitHours: unitHours.value, rounding }),
+    }) : ''));
 
     const sheet = reactive({ tabs: [], values: null });
     const busy = ref('');
@@ -152,6 +161,8 @@ export default {
         rate: draft.rate,
         unitHours: unitHours.value,
         headers: isDefaultHeaders(headers) ? null : headersOf(headers),
+        rounding: roundingOf({ rounding }).isDefault ? null : { mode: rounding.mode, stepMinutes: rounding.stepMinutes },
+        reminder: { afterHours: reminder.afterHours, everyMinutes: reminder.everyMinutes },
         spreadsheetId: draft.spreadsheetId || null,
         spreadsheetTitle: draft.spreadsheetTitle,
         sheetId: draft.sheetId,
@@ -185,7 +196,7 @@ export default {
     });
 
     return {
-      isNew, draft, headers, auth, sheet, busy, touched, configured, structure, selectedTab, renameHeader, header, url, conflict, errors,
+      isNew, draft, headers, rounding, reminder, unitHint, auth, sheet, busy, touched, configured, structure, selectedTab, renameHeader, header, url, conflict, errors,
       unitChoice, customUnit, unitHours, unitMinutes, UNIT_PRESETS, CURRENCIES,
       signIn, choose, createNew, changeTab, checkLayout, adoptTabHeaders, save, issueText, formatHours,
     };
@@ -233,7 +244,7 @@ export default {
             <span>{{ $t('editor.hours') }}</span>
           </div>
           <span v-if="touched && errors.unit" class="field-error">{{ errors.unit }}</span>
-          <span v-else-if="unitMinutes" class="hint">{{ $t('editor.unitHint', { minutes: unitMinutes, unit: formatHours(unitHours) }) }}</span>
+          <span v-else-if="unitHint" class="hint">{{ unitHint }}</span>
         </div>
       </fieldset>
 
@@ -310,7 +321,8 @@ export default {
         </template>
       </fieldset>
 
-      <ClockAdvanced :headers="headers" :currency="draft.currency.trim()" :spreadsheet-id="draft.spreadsheetId"
+      <ClockAdvanced :headers="headers" :rounding="rounding" :reminder="reminder" :unit-hours="unitHours"
+                     :currency="draft.currency.trim()" :spreadsheet-id="draft.spreadsheetId"
                      :tab="selectedTab" :can-adopt="!!sheet.values?.[0]?.length" :layout-ok="structure?.state === 'ok'"
                      :error="errors.headers" @adopt="adoptTabHeaders" @applied="checkLayout"/>
 

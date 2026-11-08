@@ -72,3 +72,18 @@ export function formatTime(ms) {
 export function formatList(items) {
   return new Intl.ListFormat(locale, { type: 'conjunction' }).format(items);
 }
+
+/** 900000 -> "15 min", 5400000 -> "1 hr, 30 min" (whole minutes; Intl.DurationFormat when available) */
+export function formatDuration(ms) {
+  const total = Math.max(0, Math.round(ms / 60_000));
+  const parts = { hours: Math.floor(total / 60), minutes: total % 60 };
+  if (!parts.hours) delete parts.hours;
+  else if (!parts.minutes) delete parts.minutes;
+  if (typeof Intl.DurationFormat === 'function') {
+    const zero = parts.hours === undefined ? { minutesDisplay: 'always' } : {}; // "0 min", not ""
+    return new Intl.DurationFormat(locale, { style: 'short', ...zero }).format(parts);
+  }
+  const unit = (n, u) => numberFormat({ style: 'unit', unit: u, unitDisplay: 'short' }).format(n);
+  return [parts.hours !== undefined && unit(parts.hours, 'hour'), parts.minutes !== undefined && unit(parts.minutes, 'minute')]
+    .filter(Boolean).join(' ');
+}

@@ -44,9 +44,20 @@
     "discardConfirm": "Stuknij ponownie, aby odrzucić sesję",
     "discarded": "Sesja odrzucona.",
     "today": "Dziś",
-    "rateLine": "{rate}/godz. · zaokrąglane w górę do {unit}",
+    "rateLine": "{rate}/godz. · {rule}",
     "alsoRunning": "Działają też:",
     "addManually": "Dodaj czas ręcznie"
+  },
+  "rounding": {
+    "up": "zaokrąglane w górę do {step}",
+    "nearest": "zaokrąglane do najbliższych {step}",
+    "down": "zaokrąglane w dół do {step}",
+    "none": "bez zaokrąglania",
+    "withMin": "min. {min}, {rule}"
+  },
+  "reminder": {
+    "title": "„{name}” nadal działa",
+    "body": "Działa już {duration}."
   },
   "save": {
     "noSheet": "Zapisano {hours} na tym urządzeniu. Połącz arkusz, aby zsynchronizować.",
@@ -118,7 +129,7 @@
     "rate": "Stawka godzinowa",
     "comment": "Komentarz (opcjonalnie)",
     "commentPlaceholder": "np. Zapomniałem włączyć zegar",
-    "rounded": "Zostanie zapisane {hours}: zaokrąglone w górę do {unit}.",
+    "rounded": "Zostanie zapisane {hours}: {rule}.",
     "addsToDay": "Dodane do {hours} już zapisanych tego dnia.",
     "dayRate": "Cały dzień będzie miał nową stawkę.",
     "errDate": "Wybierz datę.",
@@ -196,7 +207,7 @@
     "custom": "Własny",
     "customAria": "Własny minimalny czas w godzinach",
     "hours": "godz.",
-    "unitHint": "Zakończenie jest możliwe po {minutes} min. Każda sesja jest zaokrąglana w górę do wielokrotności {unit}.",
+    "unitHint": "Zakończenie jest możliwe po {minutes} min. Każdy wpis to co najmniej {unit}, {rule}.",
     "errName": "Nadaj zegarowi nazwę.",
     "errCurrency": "Wpisz walutę, np. PLN.",
     "errRate": "Wpisz aktualną stawkę godzinową.",
@@ -245,7 +256,25 @@
     "viewHint": "Najnowsze wpisy na górze, opłacone ukryte filtrem (każdy może go zmienić w wierszu nagłówka w Arkuszach) i sumy w {range}. Nowe karty dostają to automatycznie.",
     "applyView": "Zastosuj do tej karty",
     "viewNeedsLayout": "Dostępne, gdy karta ma zgodny układ.",
-    "viewApplied": "Zastosowano widok: najnowsze na górze, opłacone ukryte, sumy w {range}."
+    "viewApplied": "Zastosowano widok: najnowsze na górze, opłacone ukryte, sumy w {range}.",
+    "roundingTitle": "Zaokrąglanie",
+    "roundingHint": "Jak zaokrąglany jest czas każdej sesji lub wpisu ręcznego. Wpis nigdy nie jest krótszy niż minimalny rejestrowany czas.",
+    "roundUp": "W górę",
+    "roundNearest": "Do najbliższej",
+    "roundDown": "W dół",
+    "roundNone": "Bez zaokrąglania",
+    "roundingStep": "Krok",
+    "stepSameAsMin": "Minimalny rejestrowany czas ({unit})",
+    "roundingExamples": "Przykłady:",
+    "reminderTitle": "Przypomnienie o działającym zegarze",
+    "reminderAfter": "Przypomnij po",
+    "reminderEvery": "Potem co",
+    "reminderOff": "Wyłączone",
+    "reminderOnce": "Tylko raz",
+    "reminderHint": "Wyświetlane w aplikacji oraz jako powiadomienie systemowe, gdy aplikacja jest otwarta lub działa w tle. Zamknięta aplikacja nie może przypomnieć: nie ma serwera.",
+    "notifyAllow": "Zezwól na powiadomienia",
+    "notifyOn": "Powiadomienia systemowe są włączone.",
+    "notifyBlocked": "Powiadomienia dla tej strony są zablokowane w ustawieniach przeglądarki."
   },
   "sheetHeaders": {
     "date": "Data",

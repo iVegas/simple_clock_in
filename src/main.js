@@ -6,6 +6,7 @@ import { initBackend } from './services/backend.js';
 import { isConfigured } from './services/config.js';
 import { syncInBackground } from './services/sync.js';
 import { initI18n, t } from './i18n/index.js';
+import { startReminders } from './state/reminders.js';
 import App from './components/App.js';
 
 const [backend] = await Promise.all([initBackend(), initI18n()]);
@@ -13,6 +14,12 @@ const [backend] = await Promise.all([initBackend(), initI18n()]);
 const app = createApp(App);
 app.config.globalProperties.$t = t; // templates: {{ $t('report.dueNow') }}
 app.mount('#app');
+startReminders();
+
+// A reminder notification was tapped while the app couldn't be navigated by the service worker.
+navigator.serviceWorker?.addEventListener('message', (e) => {
+  if (e.data?.type === 'OPEN' && typeof e.data.url === 'string') location.hash = new URL(e.data.url).hash;
+});
 
 registerServiceWorker().catch((err) => console.warn('Service worker registration failed', err));
 

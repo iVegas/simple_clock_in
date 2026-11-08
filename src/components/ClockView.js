@@ -8,9 +8,10 @@ import { store, activeClock, pendingFor } from '../state/store.js';
 import { now } from '../state/now.js';
 import { toast } from '../state/toast.js';
 import { t } from '../i18n/index.js';
-import { addEntry } from '../services/sync.js';
+import { clockOut as recordClockOut } from '../services/sync.js';
+import { roundingText } from './phrases.js';
 import {
-  HOUR_MS, localDateKey, formatElapsed, formatCountdown, roundUpToUnit, msUntilClockOut, canClockOut, round2,
+  HOUR_MS, localDateKey, formatElapsed, formatCountdown, recordedHours, msUntilClockOut, round2,
 } from '../domain/time.js';
 import { formatHours, formatMoney, formatDay, formatTime } from '../domain/format.js';
 
@@ -22,7 +23,7 @@ export default {
     const running = computed(() => clock.value?.running ?? null);
     const elapsed = computed(() => (running.value ? now.value - running.value.startedAt : 0));
     const remaining = computed(() => (running.value ? msUntilClockOut(running.value.startedAt, now.value, clock.value.unitHours) : 0));
-    const willRecord = computed(() => (running.value ? roundUpToUnit(elapsed.value, clock.value.unitHours) : 0));
+    const willRecord = computed(() => (running.value ? recordedHours(elapsed.value, clock.value) : 0));
     const progress = computed(() => {
       if (!running.value) return 0;
       const unitMs = clock.value.unitHours * HOUR_MS;
@@ -53,15 +54,7 @@ export default {
       if (!clock.value.running) clock.value.running = { startedAt: Date.now() };
     }
 
-    async function clockOut() {
-      const c = clock.value;
-      if (!c?.running) return; // double tap
-      const startedAt = c.running.startedAt;
-      const endedAt = Date.now();
-      if (!canClockOut(startedAt, endedAt, c.unitHours)) return;
-      c.running = null;
-      await addEntry(c, { date: localDateKey(startedAt), hours: roundUpToUnit(endedAt - startedAt, c.unitHours), rate: c.rate, startedAt, endedAt });
-    }
+    const clockOut = () => recordClockOut(clock.value);
 
     const confirmDiscard = ref(false);
     let discardTimer;
@@ -82,7 +75,7 @@ export default {
     return {
       clock, running, elapsed, remaining, willRecord, progress, startedLabel, today, others, confirmDiscard, adding,
       clockIn, clockOut, discard, switchTo, now,
-      formatElapsed, formatCountdown, formatHours, formatMoney,
+      formatElapsed, formatCountdown, formatHours, formatMoney, roundingText,
     };
   },
   template: /* html */`
@@ -127,7 +120,7 @@ export default {
         <span>{{ formatMoney(today.amount, clock.currency) }}</span>
       </div>
       <p class="muted small center">
-        {{ $t('clock.rateLine', { rate: formatMoney(clock.rate, clock.currency), unit: formatHours(clock.unitHours) }) }}
+        {{ $t('clock.rateLine', { rate: formatMoney(clock.rate, clock.currency), rule: roundingText(clock, { withMin: true }) }) }}
       </p>
       <p class="center"><button class="btn link" @click="adding = true">{{ $t('clock.addManually') }}</button></p>
 
