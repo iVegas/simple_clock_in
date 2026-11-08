@@ -1,0 +1,12 @@
+# Development-only image. Every dev task (tests, local server, vendoring, icons)
+# runs inside this container so nothing is installed on the host.
+FROM node:24-alpine
+
+# rsvg-convert renders the SVG app icon into the PNG sizes the manifest needs.
+RUN apk add --no-cache rsvg-convert || apk add --no-cache librsvg
+
+WORKDIR /app
+ENV HOME=/tmp \
+    npm_config_cache=/tmp/.npm \
+    npm_config_update_notifier=false \
+    npm_config_fund=false

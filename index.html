@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="Clock in and out with one tap. Sessions are recorded in your Google Sheet.">
+  <meta name="theme-color" content="#0f766e">
+  <title>Clock In</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="assets/icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+  <link rel="stylesheet" href="assets/app.css">
+  <script>
+    // Capture the install prompt before the app modules load.
+    addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); window.__bip = e; });
+  </script>
+  <script type="importmap">
+    { "imports": { "vue": "./vendor/vue.esm-browser.prod.js" } }
+  </script>
+  <script src="config.js"></script>
+  <script type="module" src="src/main.js"></script>
+</head>
+<body>
+  <div id="app">
+    <noscript>Clock In needs JavaScript.</noscript>
+  </div>
+</body>
+</html>

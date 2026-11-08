@@ -1,0 +1,24 @@
+name: simple-clock-in
+
+x-dev: &dev
+  build:
+    context: .
+    dockerfile: Dockerfile.dev
+  image: simple-clock-in-dev
+  # Set by the Makefile so generated files are owned by the host user.
+  user: "${DEV_USER:-1000:1000}"
+  working_dir: /app
+  volumes:
+    - .:/app
+
+services:
+  # One-off tasks: `docker compose run --rm dev <cmd>` (see Makefile).
+  dev:
+    <<: *dev
+
+  # Local static server on http://localhost:8000 (`make serve`).
+  serve:
+    <<: *dev
+    command: ["node", "tools/serve.mjs", "${SERVE_ROOT:-.}", "8000"]
+    ports:
+      - "127.0.0.1:8000:8000"
