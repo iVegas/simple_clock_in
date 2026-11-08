@@ -144,6 +144,7 @@ code { background: var(--surface-2); padding: .1em .35em; border-radius: 6px; wo
   &.ghost:hover:not(:disabled) { background: var(--surface-2); }
   &.link { background: none; border: none; color: var(--muted); font-weight: 500; text-decoration: underline; min-height: 36px; }
   &.danger { color: var(--danger); }
+  &.destructive { background: var(--danger); border-color: var(--danger); color: light-dark(#fff, #2a0906); }
   &.small { min-height: 36px; padding: .35rem .8rem; font-size: .875rem; }
   &.large { min-height: 56px; padding: .8rem 1.6rem; font-size: 1.1rem; }
   &.icon-only { width: 40px; min-height: 40px; padding: 0; }
@@ -411,7 +412,20 @@ legend + * { clear: both; }
   padding: 12px 14px;
   & + & { border-top: 1px solid var(--border); }
 }
-.entry-main { display: grid; gap: 1px; min-width: 0; }
+.entry-main {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+  flex: 1;
+  padding: 0;
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+  &:focus-visible { outline: 3px solid color-mix(in srgb, var(--primary) 45%, transparent); outline-offset: 4px; border-radius: 6px; }
+}
 .entry-date { font-weight: 650; }
 .entry-calc { font-size: .85rem; font-variant-numeric: tabular-nums; }
 .entry-comment { font-size: .8rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -422,6 +436,61 @@ legend + * { clear: both; }
 .payout-head { display: flex; justify-content: space-between; padding: 0 4px; font-size: .9rem; color: var(--muted); strong { color: var(--text); } }
 
 .empty { text-align: center; padding: 24px 0; }
+
+/* ---------------------------------------------------------------- modal (native <dialog>) */
+
+.modal {
+  width: min(100% - 32px, 440px);
+  max-height: calc(100dvh - 32px);
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 18px 48px rgb(0 0 0 / .25);
+  &::backdrop { background: rgb(0 0 0 / .45); }
+  &[open] { animation: modal-in .18s ease-out; }
+}
+.modal-body { display: grid; gap: 14px; padding: 16px 18px 18px; }
+.modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: -4px -8px -4px 0;
+  h2 { margin: 0; font-size: 1.1rem; }
+}
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: .5rem;
+  margin-top: 4px;
+  .btn.danger { margin-inline-end: auto; } /* destructive action apart from the main one */
+}
+.entry-form { display: grid; gap: 12px; }
+.details {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 8px 16px;
+  margin: 0;
+  dt { color: var(--muted); font-size: .9rem; }
+  dd { margin: 0; text-align: end; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+}
+.pre-line { white-space: pre-line; }
+.warn-text { color: var(--amber); display: flex; align-items: center; gap: .4rem; }
+@keyframes modal-in { from { opacity: 0; translate: 0 12px; } }
+
+/* Phones: a bottom sheet. */
+@media (max-width: 560px) {
+  .modal {
+    width: 100%;
+    max-width: 100%;
+    margin: auto 0 0;
+    border-radius: var(--radius) var(--radius) 0 0;
+    padding-bottom: var(--safe-b);
+  }
+}
 
 /* ---------------------------------------------------------------- clocks / editor */
 
@@ -473,6 +542,7 @@ legend + * { clear: both; }
   img { border-radius: 16px; box-shadow: var(--shadow); }
   h1 { font-size: 1.8rem; }
   p { max-width: 26rem; }
+  .language-select { width: min(100%, 16rem); text-align: start; }
 }
 
 .steps {

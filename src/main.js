@@ -5,11 +5,14 @@ import { registerServiceWorker } from './pwa/updates.js';
 import { initBackend } from './services/backend.js';
 import { isConfigured } from './services/config.js';
 import { syncInBackground } from './services/sync.js';
+import { initI18n, t } from './i18n/index.js';
 import App from './components/App.js';
 
-const backend = await initBackend();
+const [backend] = await Promise.all([initBackend(), initI18n()]);
 
-createApp(App).mount('#app');
+const app = createApp(App);
+app.config.globalProperties.$t = t; // templates: {{ $t('report.dueNow') }}
+app.mount('#app');
 
 registerServiceWorker().catch((err) => console.warn('Service worker registration failed', err));
 

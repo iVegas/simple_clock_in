@@ -6,8 +6,8 @@ import { ApiError } from './errors.js';
 import { store } from '../state/store.js';
 import { localDateKey } from '../domain/time.js';
 import {
-  DATA_RANGE, validateStructure, parseRecords, parseDateCell, planSession,
-  setupRequests, markPaidRequest, clearPaidRequest,
+  DATA_RANGE, validateStructure, parseRecords, planSession, rowMatches,
+  setupRequests, markPaidRequest, clearPaidRequest, deleteRowRequest,
 } from '../domain/ledger.js';
 
 /**
@@ -47,7 +47,7 @@ export async function createTimesheet({ title, currency }, opts) {
 }
 
 /**
- * Add one pending session to the day's row (create the row if needed).
+ * Add one pending entry (session or manual) to the day's row (create the row if needed).
  * `sheet` must be a fresh loadSheet() result with structure "ok".
  */
 export async function recordSession(clock, sheet, item, opts) {
@@ -57,6 +57,7 @@ export async function recordSession(clock, sheet, item, opts) {
     date: item.date,
     hours: item.hours,
     rate: item.rate,
+    comment: item.comment,
     locale: sheet.meta.locale,
   });
   if (plan.appendRows) {
@@ -76,11 +77,10 @@ export async function recordSession(clock, sheet, item, opts) {
   return plan;
 }
 
-/** Make sure the row still holds the same day before changing its "paid" cell. */
+/** Make sure the row still holds the same entry (day + hours) before changing or deleting it. */
 async function assertRow(clock, record, opts) {
-  const values = await backend.sheets.getValues(clock.spreadsheetId, `${quoteSheet(clock.sheetTitle)}!A${record.row}`, opts);
-  const locale = store.cache[clock.id]?.locale ?? '';
-  if (parseDateCell(values?.[0]?.[0], locale) !== record.date) throw new ApiError('row-moved');
+  const values = await backend.sheets.getValues(clock.spreadsheetId, `${quoteSheet(clock.sheetTitle)}!A${record.row}:B${record.row}`, opts);
+  if (!rowMatches(values?.[0], record, store.cache[clock.id]?.locale ?? '')) throw new ApiError('row-moved');
 }
 
 /** Record today as the payout date of a day. */
@@ -89,8 +89,18 @@ export async function markPaid(clock, record, opts = { interactive: true }) {
   await backend.sheets.batchUpdate(clock.spreadsheetId, [markPaidRequest(clock.sheetId, record.row, localDateKey())], opts);
 }
 
-/** Undo: clear the "paid" cell (empty = unpaid). */
+/** Cancel a payment: clear the "paid" cell (empty = unpaid). */
 export async function unmarkPaid(clock, record, opts = { interactive: true }) {
   await assertRow(clock, record, opts);
   await backend.sheets.batchUpdate(clock.spreadsheetId, [clearPaidRequest(clock.sheetId, record.row)], opts);
+}
+
+/** Delete the entry's row from the sheet. */
+export async function deleteEntry(clock, record, opts = { interactive: true }) {
+  await assertRow(clock, record, opts);
+  await backend.sheets.batchUpdate(clock.spreadsheetId, [deleteRowRequest(clock.sheetId, record.row)], opts);
+  // Rows below moved up: keep the "already written?" check of queued entries pointing at the right row.
+  for (const p of store.pending) {
+    if (p.clockId === clock.id && p.expect?.row > record.row) p.expect.row -= 1;
+  }
 }

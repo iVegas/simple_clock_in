@@ -8,7 +8,7 @@ const KEY = storageKey('v1');
 /**
  * clocks:   [{ id, name, currency, rate, unitHours, spreadsheetId, spreadsheetTitle,
  *              sheetId, sheetTitle, running: {startedAt}|null, structure, createdAt }]
- * pending:  [{ id, clockId, date, hours, rate, startedAt, endedAt, attempts, lastError, expect }]
+ * pending:  [{ id, clockId, date, hours, rate, comment?, manual?, startedAt?, endedAt?, attempts, lastError, expect }]
  * cache:    { [clockId]: { records, locale, fetchedAt } }
  */
 const fresh = () => ({ clocks: [], activeClockId: null, pending: [], cache: {} });

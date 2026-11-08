@@ -54,20 +54,15 @@ export function validateStructure(values, currency) {
     }
   }
   if (found(COL.comment) && !/^comments?$/i.test(found(COL.comment))) {
-    issues.push({ column: 'F', expected: 'comment (or empty)', found: found(COL.comment) });
+    issues.push({ column: 'F', expected: expected[COL.comment], found: found(COL.comment), optional: true });
   }
 
+  // Issues are data ({column, expected, found, kind?, optional?}); the UI words them per language.
   return {
     state: issues.length ? 'mismatch' : 'ok',
     issues,
     readable: issues.every((i) => i.kind === 'currency'),
   };
-}
-
-/** Human-readable text of one structure issue. */
-export function describeIssue(issue) {
-  const found = issue.found ? `“${issue.found}”` : 'an empty cell';
-  return `Column ${issue.column}: expected “${issue.expected}”, found ${found}`;
 }
 
 /** Sheets batchUpdate requests that set up an empty tab for a clock. */
@@ -204,13 +199,14 @@ export function lastDataRow(values) {
 // Writes
 
 /**
- * Plan the cell writes for one clocked session.
- * Unpaid row for the date -> Hours = existing + session; otherwise a new row after the last one.
+ * Plan the cell writes for one entry (a clocked session or a manual entry).
+ * Unpaid row for the date -> Hours = existing + entry; otherwise a new row after the last one.
  * (A day already marked paid is never changed: later work that day gets its own unpaid row.)
- * The rate column always gets the current rate, and sum is (re)written as =B*C.
+ * The rate column always gets the entry's rate, and sum is (re)written as =B*C.
+ * A comment is appended to the day's comment ("; "-separated).
  * @returns {{row, isNew, newHours, cells: Array<{cell, value}>, appendRows: number}}
  */
-export function planSession({ values, rowCount = Infinity, date, hours, rate, locale = '' }) {
+export function planSession({ values, rowCount = Infinity, date, hours, rate, comment = '', locale = '' }) {
   const existing = parseRecords(values, locale).find((r) => r.date === date && !r.paid.paid);
   const row = existing ? existing.row : lastDataRow(values) + 1;
   const newHours = round2((existing?.hours ?? 0) + hours);
@@ -221,7 +217,22 @@ export function planSession({ values, rowCount = Infinity, date, hours, rate, lo
     { cell: `C${row}`, value: rate },
     { cell: `D${row}`, value: `=B${row}*C${row}` },
   );
+  const note = String(comment ?? '').trim();
+  if (note) {
+    // Leading apostrophe: Sheets keeps the text as typed (never a number, date or formula).
+    cells.push({ cell: `F${row}`, value: `'${existing?.comment ? `${existing.comment}; ${note}` : note}` });
+  }
   return { row, isNew: !existing, newHours, cells, appendRows: Math.max(0, row - rowCount) };
+}
+
+/** Remove a whole row from the tab (rows below move up; their =B*C formulas follow). */
+export function deleteRowRequest(sheetId, row) {
+  return { deleteDimension: { range: { sheetId, dimension: 'ROWS', startIndex: row - 1, endIndex: row } } };
+}
+
+/** Does a freshly read [date, hours] pair still describe the record (guards writes against moved rows)? */
+export function rowMatches(cells, record, locale = '') {
+  return parseDateCell(cells?.[COL.date], locale) === record.date && (toNumber(cells?.[COL.hours]) ?? 0) === record.hours;
 }
 
 /** Write a payout date into "paid". Also drops a legacy checkbox validation so a date is accepted. */

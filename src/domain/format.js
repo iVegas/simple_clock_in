@@ -1,11 +1,28 @@
-// Display formatting (locale-aware, browser default locale).
+// Display formatting with Intl. The locale follows the chosen UI language (set by src/i18n);
+// until then (and in tests) it is the browser/runtime default.
 import { round2 } from './time.js';
 
-const hoursFormat = new Intl.NumberFormat(undefined, { maximumFractionDigits: 2 });
+let locale; // undefined = runtime default
+const formats = new Map();
+const numberFormat = (opts) => {
+  const key = `${locale}|${JSON.stringify(opts)}`;
+  if (!formats.has(key)) formats.set(key, new Intl.NumberFormat(locale, opts));
+  return formats.get(key);
+};
 
-/** 1.5 -> "1.5 h", 2 -> "2 h", 1.25 -> "1.25 h" (decimal separator follows the browser locale) */
+/** BCP 47 tag ("uk", "en-GB") used by every formatter below. */
+export function setFormatLocale(tag) {
+  locale = tag || undefined;
+}
+
+/** 1.5 -> "1.5 hr" / "1,5 год" / "1,5 Std." (localized unit and decimal separator) */
 export function formatHours(hours) {
-  return `${hoursFormat.format(round2(hours || 0))} h`;
+  return numberFormat({ style: 'unit', unit: 'hour', unitDisplay: 'short', maximumFractionDigits: 2 }).format(round2(hours || 0));
+}
+
+/** 45 -> "45", 12.5 -> "12.5" */
+export function formatNumber(n) {
+  return numberFormat({ maximumFractionDigits: 2 }).format(Number(n) || 0);
 }
 
 /** Uses Intl currency formatting for ISO codes ("USD"), plain "12.50 €" otherwise. */
@@ -14,24 +31,44 @@ export function formatMoney(amount, currency = '') {
   const code = String(currency).trim();
   if (/^[A-Za-z]{3}$/.test(code)) {
     try {
-      return new Intl.NumberFormat(undefined, { style: 'currency', currency: code.toUpperCase() }).format(n);
+      return numberFormat({ style: 'currency', currency: code.toUpperCase() }).format(n);
     } catch { /* not a known ISO code: fall through */ }
   }
-  return code ? `${n.toFixed(2)} ${code}` : n.toFixed(2);
+  const plain = numberFormat({ minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
+  return code ? `${plain} ${code}` : plain;
 }
+
+const dateOf = (iso) => {
+  const [y, m, d] = iso.split('-').map(Number);
+  return new Date(y, m - 1, d);
+};
 
 /** "2026-11-08" -> "Sun, 8 Nov" (year added when not the current year) */
 export function formatDay(iso) {
   if (!iso) return '—';
-  const [y, m, d] = iso.split('-').map(Number);
-  const date = new Date(y, m - 1, d);
+  const date = dateOf(iso);
   const opts = { weekday: 'short', day: 'numeric', month: 'short' };
-  if (y !== new Date().getFullYear()) opts.year = 'numeric';
-  return date.toLocaleDateString(undefined, opts);
+  if (date.getFullYear() !== new Date().getFullYear()) opts.year = 'numeric';
+  return date.toLocaleDateString(locale, opts);
+}
+
+/** "2026-11-08" -> "Sunday, 8 November 2026" */
+export function formatDayLong(iso) {
+  if (!iso) return '—';
+  return dateOf(iso).toLocaleDateString(locale, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 }
 
 /** "2026-11" -> "November 2026" */
 export function formatMonth(ym) {
-  const [y, m] = ym.split('-').map(Number);
-  return new Date(y, m - 1, 1).toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+  return dateOf(`${ym}-01`).toLocaleDateString(locale, { month: 'long', year: 'numeric' });
+}
+
+/** Timestamp -> "09:41" */
+export function formatTime(ms) {
+  return new Date(ms).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
+}
+
+/** ["a", "b", "c"] -> "a, b and c" (localized conjunction) */
+export function formatList(items) {
+  return new Intl.ListFormat(locale, { type: 'conjunction' }).format(items);
 }

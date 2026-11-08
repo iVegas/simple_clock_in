@@ -16,12 +16,15 @@ function walk(dir) {
   });
 }
 
+// Translations other than English are downloaded on demand (only the chosen one is kept offline).
+const isOptionalLocale = (f) => /src\/i18n\/locales\/(?!en\.json)/.test(f);
+
 const runtimeFiles = [
   'index.html', 'manifest.webmanifest', 'config.js',
   ...walk('src'),
   ...walk('assets'),
   ...walk('vendor').filter((f) => f.endsWith('.js')),
-].map((f) => `./${relative('.', f)}`);
+].map((f) => `./${relative('.', f)}`).filter((f) => !isOptionalLocale(f));
 
 test('every precached asset exists', () => {
   for (const asset of assets.filter((a) => a !== './')) {
@@ -37,4 +40,8 @@ test('every runtime file is precached', () => {
 test('manifest icons are precached', () => {
   const manifest = JSON.parse(readFileSync(join(root, 'manifest.webmanifest'), 'utf8'));
   for (const icon of manifest.icons) assert.ok(assets.includes(`./${icon.src}`), `${icon.src} not precached`);
+});
+
+test('only the default language is precached', () => {
+  assert.deepEqual(assets.filter((a) => a.includes('/i18n/locales/')), ['./src/i18n/locales/en.json']);
 });

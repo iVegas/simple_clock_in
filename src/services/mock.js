@@ -62,6 +62,7 @@ function parseRange(range) {
 /** Value as typed by a user (valueInputOption=USER_ENTERED). */
 function userEntered(v) {
   if (typeof v !== 'string') return v;
+  if (v.startsWith("'")) return v.slice(1); // forced text
   if (v.startsWith('=')) return v;
   if (/^\d{4}-\d{2}-\d{2}$/.test(v)) return isoToSerial(v);
   if (/^(TRUE|FALSE)$/i.test(v)) return v.toUpperCase() === 'TRUE';
@@ -195,6 +196,15 @@ export function createMockBackend() {
       for (const req of requests) {
         if (req.appendDimension) {
           tabBy(s, (t) => t.sheetId === req.appendDimension.sheetId, req.appendDimension.sheetId).rowCount += req.appendDimension.length;
+        } else if (req.deleteDimension) {
+          const { sheetId, startIndex, endIndex } = req.deleteDimension.range;
+          const tab = tabBy(s, (t) => t.sheetId === sheetId, sheetId);
+          const n = endIndex - startIndex;
+          tab.cells.splice(startIndex, n);
+          tab.rowCount -= n;
+          // Formulas below the removed rows follow them up (=B7*C7 -> =B6*C6), like Sheets does.
+          const shift = (f) => f.replace(/([A-Z])(\d+)/g, (m, c, r) => (Number(r) > endIndex ? `${c}${Number(r) - n}` : m));
+          for (const row of tab.cells) row?.forEach((v, c) => { if (typeof v === 'string' && v.startsWith('=')) row[c] = shift(v); });
         } else if (req.updateCells) {
           const u = req.updateCells;
           const sheetId = u.start?.sheetId ?? u.range.sheetId;

@@ -13,7 +13,6 @@ export default {
   props: { embedded: Boolean },
   setup() {
     const origin = location.origin;
-    const appUrl = location.origin + location.pathname;
     const form = reactive({ ...config });
     const snippet = computed(() => `window.CLOCKIN_CONFIG = {
   googleClientId: '${form.googleClientId}',
@@ -46,7 +45,7 @@ export default {
       toast('Using the values from config.js.');
     }
 
-    return { origin, appUrl, form, snippet, copy, save, reset, hasOverride };
+    return { origin, form, snippet, copy, save, reset, hasOverride };
   },
   template: /* html */`
     <section class="assistant">
@@ -75,7 +74,8 @@ export default {
           <a class="small" href="https://console.cloud.google.com/auth/branding" target="_blank" rel="noopener">Google Auth Platform › Branding <Icon name="external"/></a>
           <span class="small muted">App name + support email. Audience: <em>External</em>. Under <em>Data access</em> add the scopes
             <code>…/auth/drive.file</code> and <code>…/auth/userinfo.email</code> (both non-sensitive, so no Google review is needed).
-            Then <em>Publish app</em>, or add yourself as a test user.</span>
+            Then <em>Audience › Publish app</em>. In <em>Testing</em> status Google shows a “hasn’t verified this app” warning.
+            Skip the logo: a logo requires brand verification.</span>
         </li>
         <li class="card">
           <strong>Create an OAuth client</strong>
@@ -87,7 +87,10 @@ export default {
         <li class="card">
           <strong>Create an API key</strong> <span class="small muted">(used by the file picker)</span>
           <a class="small" href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener">Credentials › Create credentials › API key <Icon name="external"/></a>
-          <span class="small muted">Restrict it: <em>Websites</em> → <code>{{ appUrl }}*</code>, <em>API restrictions</em> → Google Picker API.</span>
+          <span class="small muted">Restrict it: <em>Websites</em> →</span>
+          <div class="copy-row"><code>{{ origin }}/*</code><button class="btn small" @click="copy(origin + '/*')">Copy</button></div>
+          <span class="small muted">(the origin only, not the page path: browsers send just the origin to the picker),
+            and <em>API restrictions</em> → Google Picker API.</span>
         </li>
         <li class="card">
           <strong>Find the project number</strong>

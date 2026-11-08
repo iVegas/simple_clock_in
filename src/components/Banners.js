@@ -13,15 +13,15 @@ export const InstallBanner = {
     return { install, visible, promptInstall, dismissInstall };
   },
   template: /* html */`
-    <div v-if="visible" class="banner install-banner" role="region" aria-label="Install app">
+    <div v-if="visible" class="banner install-banner" role="region" :aria-label="$t('install.region')">
       <img src="assets/icons/icon.svg" alt="" width="40" height="40">
       <div class="banner-text">
-        <strong>Install Clock In</strong>
-        <span v-if="install.deferred">One tap to clock in, works offline, updates itself.</span>
-        <span v-else>Tap <b>Share</b>, then <b>Add to Home Screen</b>.</span>
+        <strong>{{ $t('install.title') }}</strong>
+        <span v-if="install.deferred">{{ $t('install.pitch') }}</span>
+        <span v-else>{{ $t('install.ios') }}</span>
       </div>
-      <button v-if="install.deferred" class="btn primary small" @click="promptInstall">Install</button>
-      <button class="btn ghost icon-only" aria-label="Not now" title="Not now" @click="dismissInstall()"><Icon name="close"/></button>
+      <button v-if="install.deferred" class="btn primary small" @click="promptInstall">{{ $t('install.button') }}</button>
+      <button class="btn ghost icon-only" :aria-label="$t('install.notNow')" :title="$t('install.notNow')" @click="dismissInstall()"><Icon name="close"/></button>
     </div>`,
 };
 
@@ -30,26 +30,26 @@ export const UpdateBanner = {
   setup: () => ({ updates, applyUpdate }),
   template: /* html */`
     <div v-if="updates.waiting" class="banner update-banner" role="status">
-      <div class="banner-text"><strong>A new version is ready.</strong></div>
-      <button class="btn primary small" @click="applyUpdate">Reload</button>
+      <div class="banner-text"><strong>{{ $t('install.ready') }}</strong></div>
+      <button class="btn primary small" @click="applyUpdate">{{ $t('install.reload') }}</button>
     </div>`,
 };
 
 export const Toasts = {
   name: 'Toasts',
   setup() {
-    const run = (t) => {
-      dismissToast(t.id);
-      t.action.run();
+    const run = (item) => {
+      dismissToast(item.id);
+      item.action.run();
     };
     return { toasts, dismissToast, run };
   },
   template: /* html */`
     <div class="toasts" role="status" aria-live="polite">
-      <div v-for="t in toasts" :key="t.id" class="toast" :class="t.tone">
-        <span class="toast-text">{{ t.message }}</span>
-        <button v-if="t.action" class="btn small ghost" @click="run(t)">{{ t.action.label }}</button>
-        <button class="toast-close" aria-label="Dismiss" @click="dismissToast(t.id)">×</button>
+      <div v-for="item in toasts" :key="item.id" class="toast" :class="item.tone">
+        <span class="toast-text">{{ item.message }}</span>
+        <button v-if="item.action" class="btn small ghost" @click="run(item)">{{ item.action.label }}</button>
+        <button class="toast-close" :aria-label="$t('install.dismiss')" @click="dismissToast(item.id)">×</button>
       </div>
     </div>`,
 };

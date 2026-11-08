@@ -3,6 +3,8 @@ import { ref, reactive, computed, onMounted } from 'vue';
 import Icon from './Icon.js';
 import { store, clockById } from '../state/store.js';
 import { toast } from '../state/toast.js';
+import { t } from '../i18n/index.js';
+import { issueText } from './StructureWarning.js';
 import { go } from '../router.js';
 import { MOCK } from '../mode.js';
 import { backend } from '../services/backend.js';
@@ -12,7 +14,8 @@ import { setupSheet, createTimesheet } from '../services/timesheet.js';
 import { syncClock } from '../services/sync.js';
 import { describeError } from '../services/errors.js';
 import { uid, spreadsheetUrl } from '../services/util.js';
-import { DATA_RANGE, validateStructure, describeIssue, expectedHeader } from '../domain/ledger.js';
+import { DATA_RANGE, validateStructure, expectedHeader } from '../domain/ledger.js';
+import { formatHours } from '../domain/format.js';
 import { UNIT_PRESETS, isValidUnit, round2 } from '../domain/time.js';
 
 const CURRENCIES = ['USD', 'EUR', 'GBP', 'UAH', 'PLN', 'CZK', 'CHF', 'CAD', 'AUD', 'SEK', 'NOK', 'DKK', 'JPY', 'INR', 'BRL', 'MXN'];
@@ -28,7 +31,7 @@ export default {
 
     const auth = backend.auth.state;
     const draft = reactive({
-      name: existing?.name ?? (store.clocks.length ? '' : 'My work'),
+      name: existing?.name ?? (store.clocks.length ? '' : t('editor.defaultName')),
       currency: existing?.currency ?? 'USD',
       rate: existing?.rate ?? '',
       spreadsheetId: existing?.spreadsheetId ?? '',
@@ -55,10 +58,10 @@ export default {
       : null));
 
     const errors = computed(() => ({
-      name: draft.name.trim() ? '' : 'Give the clock a name.',
-      currency: draft.currency.trim() ? '' : 'Enter a currency, e.g. USD.',
-      rate: typeof draft.rate === 'number' && draft.rate >= 0 ? '' : 'Enter the current cost of an hour.',
-      unit: isValidUnit(unitHours.value) ? '' : 'Enter the minimum tracked time in hours, e.g. 1.5.',
+      name: draft.name.trim() ? '' : t('editor.errName'),
+      currency: draft.currency.trim() ? '' : t('editor.errCurrency'),
+      rate: typeof draft.rate === 'number' && draft.rate >= 0 ? '' : t('editor.errRate'),
+      unit: isValidUnit(unitHours.value) ? '' : t('editor.errUnit'),
     }));
     const invalid = computed(() => Object.values(errors.value).some(Boolean));
 
@@ -103,14 +106,14 @@ export default {
     });
 
     const createNew = () => run('create', async () => {
-      if (errors.value.currency) throw new Error('Enter the currency first: the new sheet’s header uses it.');
+      if (errors.value.currency) throw new Error(t('editor.currencyFirst'));
       const created = await createTimesheet(
-        { title: `${draft.name.trim() || 'Clock In'} – timesheet`, currency: draft.currency.trim() },
+        { title: t('editor.timesheetTitle', { name: draft.name.trim() || 'Clock In' }), currency: draft.currency.trim() },
         { interactive: true },
       );
       Object.assign(draft, created);
       await loadTabs(true);
-      toast('New spreadsheet created in your Google Drive.', { tone: 'success' });
+      toast(t('editor.created'), { tone: 'success' });
     });
 
     const changeTab = (e) => run('tabs', () => selectTab(Number(e.target.value)));
@@ -120,7 +123,7 @@ export default {
       touched.value = true;
       if (invalid.value) return;
       if (conflict.value) {
-        toast(`“${conflict.value.name}” already uses this tab. Pick another tab or spreadsheet.`, { tone: 'warn' });
+        toast(t('editor.conflictToast', { name: conflict.value.name }), { tone: 'warn' });
         return;
       }
       const currency = draft.currency.trim();
@@ -153,7 +156,7 @@ export default {
       if (clock.spreadsheetId) {
         await syncClock(clock.id, { interactive: true }).catch((err) => toast(describeError(err), { tone: 'warn' }));
       }
-      toast(isNew ? `“${clock.name}” is ready.` : 'Clock saved.', { tone: 'success' });
+      toast(isNew ? t('editor.ready', { name: clock.name }) : t('editor.saved'), { tone: 'success' });
       go('/');
     });
 
@@ -167,129 +170,127 @@ export default {
     return {
       isNew, draft, auth, sheet, busy, touched, configured, structure, header, url, conflict, errors,
       unitChoice, customUnit, unitHours, unitMinutes, UNIT_PRESETS, CURRENCIES,
-      signIn, choose, createNew, changeTab, checkLayout, save, describeIssue,
+      signIn, choose, createNew, changeTab, checkLayout, save, issueText, formatHours,
     };
   },
   template: /* html */`
     <form class="editor" @submit.prevent="save" novalidate>
       <div v-if="!wizard" class="page-head">
-        <a href="#/clocks" class="btn ghost icon-only" aria-label="Back to clocks"><Icon name="back"/></a>
-        <h1>{{ isNew ? 'New clock' : 'Clock settings' }}</h1>
+        <a href="#/clocks" class="btn ghost icon-only" :aria-label="$t('editor.back')"><Icon name="back"/></a>
+        <h1>{{ isNew ? $t('editor.new') : $t('editor.settings') }}</h1>
       </div>
 
       <fieldset class="card">
-        <legend>{{ wizard ? '1. Your rate' : 'Clock' }}</legend>
+        <legend>{{ wizard ? $t('editor.stepRate') : $t('editor.clock') }}</legend>
         <label class="field">
-          <span class="field-label">Name</span>
-          <input v-model="draft.name" autocomplete="off" placeholder="e.g. Acme Corp" :aria-invalid="touched && !!errors.name">
+          <span class="field-label">{{ $t('editor.name') }}</span>
+          <input v-model="draft.name" autocomplete="off" :placeholder="$t('editor.namePlaceholder')" :aria-invalid="touched && !!errors.name">
           <span v-if="touched && errors.name" class="field-error">{{ errors.name }}</span>
         </label>
         <div class="field-row">
           <label class="field">
-            <span class="field-label">Currency</span>
+            <span class="field-label">{{ $t('editor.currency') }}</span>
             <input v-model="draft.currency" list="currency-list" autocomplete="off" autocapitalize="characters" placeholder="USD"
                    :aria-invalid="touched && !!errors.currency">
             <datalist id="currency-list"><option v-for="c in CURRENCIES" :key="c" :value="c"/></datalist>
             <span v-if="touched && errors.currency" class="field-error">{{ errors.currency }}</span>
           </label>
           <label class="field">
-            <span class="field-label">Cost per hour</span>
+            <span class="field-label">{{ $t('editor.rate') }}</span>
             <input v-model.number="draft.rate" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0.00"
                    :aria-invalid="touched && !!errors.rate">
             <span v-if="touched && errors.rate" class="field-error">{{ errors.rate }}</span>
           </label>
         </div>
         <div class="field">
-          <span class="field-label" id="unit-label">Minimum tracked time</span>
+          <span class="field-label" id="unit-label">{{ $t('editor.unit') }}</span>
           <div class="segmented wrap" role="radiogroup" aria-labelledby="unit-label">
             <button v-for="u in UNIT_PRESETS" :key="u" type="button" role="radio" :aria-checked="unitChoice === u"
-                    :class="{ on: unitChoice === u }" @click="unitChoice = u">{{ u }} h</button>
+                    :class="{ on: unitChoice === u }" @click="unitChoice = u">{{ formatHours(u) }}</button>
             <button type="button" role="radio" :aria-checked="unitChoice === 'custom'"
-                    :class="{ on: unitChoice === 'custom' }" @click="unitChoice = 'custom'">Custom</button>
+                    :class="{ on: unitChoice === 'custom' }" @click="unitChoice = 'custom'">{{ $t('editor.custom') }}</button>
           </div>
           <div v-if="unitChoice === 'custom'" class="inline-input">
             <input v-model.number="customUnit" type="number" inputmode="decimal" min="0.01" step="0.05" placeholder="1.5"
-                   aria-label="Custom minimum tracked time in hours" :aria-invalid="touched && !!errors.unit">
-            <span>hours</span>
+                   :aria-label="$t('editor.customAria')" :aria-invalid="touched && !!errors.unit">
+            <span>{{ $t('editor.hours') }}</span>
           </div>
           <span v-if="touched && errors.unit" class="field-error">{{ errors.unit }}</span>
-          <span v-else-if="unitMinutes" class="hint">
-            Clock out unlocks after {{ unitMinutes }} min. Every session is rounded up to the next multiple of {{ unitHours }} h.
-          </span>
+          <span v-else-if="unitMinutes" class="hint">{{ $t('editor.unitHint', { minutes: unitMinutes, unit: formatHours(unitHours) }) }}</span>
         </div>
       </fieldset>
 
       <fieldset class="card">
-        <legend>{{ wizard ? '2. Google Sheet' : 'Google Sheet' }}</legend>
+        <legend>{{ wizard ? $t('editor.stepSheet') : $t('editor.sheet') }}</legend>
 
         <div v-if="!configured" class="alert warn">
-          <p class="small">Google access isn’t configured for this app yet.</p>
-          <a class="btn small" href="#/google-setup">Open setup assistant</a>
+          <p class="small">{{ $t('account.notConfigured') }}</p>
+          <a class="btn small" href="#/google-setup">{{ $t('account.openAssistant') }}</a>
         </div>
 
         <template v-else-if="!auth.email">
-          <p class="small muted">Sign in so the app can write to your timesheet. It only gets access to the spreadsheet you choose or create here.</p>
-          <button type="button" class="btn primary" :disabled="!!busy" @click="signIn"><Icon name="user"/> Sign in with Google</button>
+          <p class="small muted">{{ $t('editor.signInHint') }}</p>
+          <button type="button" class="btn primary" :disabled="!!busy" @click="signIn"><Icon name="user"/> {{ $t('account.signIn') }}</button>
         </template>
 
         <template v-else>
-          <p class="small muted">Signed in as {{ auth.email }}</p>
+          <p class="small muted">{{ $t('account.signedInAs', { email: auth.email }) }}</p>
 
           <div v-if="!draft.spreadsheetId" class="row wrap">
-            <button type="button" class="btn primary" :disabled="!!busy" @click="choose"><Icon name="sheet"/> Choose spreadsheet</button>
-            <button type="button" class="btn" :disabled="!!busy" @click="createNew"><Icon name="plus"/> Create new timesheet</button>
+            <button type="button" class="btn primary" :disabled="!!busy" @click="choose"><Icon name="sheet"/> {{ $t('editor.choose') }}</button>
+            <button type="button" class="btn" :disabled="!!busy" @click="createNew"><Icon name="plus"/> {{ $t('editor.create') }}</button>
           </div>
 
           <template v-else>
             <div class="picked">
               <Icon name="sheet"/>
               <div class="picked-text">
-                <strong>{{ draft.spreadsheetTitle || 'Spreadsheet' }}</strong>
-                <a :href="url" target="_blank" rel="noopener" class="small">Open in Sheets <Icon name="external"/></a>
+                <strong>{{ draft.spreadsheetTitle || $t('editor.spreadsheet') }}</strong>
+                <a :href="url" target="_blank" rel="noopener" class="small">{{ $t('common.openInSheets') }} <Icon name="external"/></a>
               </div>
-              <button type="button" class="btn small ghost" :disabled="!!busy" @click="choose">Change</button>
+              <button type="button" class="btn small ghost" :disabled="!!busy" @click="choose">{{ $t('editor.change') }}</button>
             </div>
 
             <label v-if="sheet.tabs.length" class="field">
-              <span class="field-label">Tab</span>
+              <span class="field-label">{{ $t('editor.tab') }}</span>
               <select :value="draft.sheetId" :disabled="!!busy" @change="changeTab">
-                <option v-for="t in sheet.tabs" :key="t.sheetId" :value="t.sheetId">{{ t.title }}</option>
+                <option v-for="tab in sheet.tabs" :key="tab.sheetId" :value="tab.sheetId">{{ tab.title }}</option>
               </select>
             </label>
             <div v-else class="row">
-              <span class="small muted" v-if="draft.sheetTitle">Tab: {{ draft.sheetTitle }}</span>
-              <button type="button" class="btn small" :disabled="!!busy" @click="checkLayout"><Icon name="refresh"/> Check layout</button>
+              <span class="small muted" v-if="draft.sheetTitle">{{ $t('editor.tabName', { name: draft.sheetTitle }) }}</span>
+              <button type="button" class="btn small" :disabled="!!busy" @click="checkLayout"><Icon name="refresh"/> {{ $t('editor.checkLayout') }}</button>
             </div>
 
-            <p v-if="busy === 'tabs' || busy === 'pick' || busy === 'create'" class="small muted">Checking the sheet…</p>
+            <p v-if="busy === 'tabs' || busy === 'pick' || busy === 'create'" class="small muted">{{ $t('editor.checking') }}</p>
             <div v-else-if="structure?.state === 'empty'" class="alert info">
-              <p class="small">This tab is empty. On save it will be set up as:</p>
+              <p class="small">{{ $t('editor.emptyTab') }}</p>
               <code class="small">{{ header }}</code>
             </div>
-            <p v-else-if="structure?.state === 'ok'" class="ok-line small"><Icon name="check"/> Layout matches.</p>
+            <p v-else-if="structure?.state === 'ok'" class="ok-line small"><Icon name="check"/> {{ $t('editor.layoutOk') }}</p>
             <div v-else-if="structure?.state === 'mismatch'" class="alert warn">
-              <div class="alert-title"><Icon name="warning"/> This tab doesn’t match the expected layout</div>
+              <div class="alert-title"><Icon name="warning"/> {{ $t('editor.mismatchTitle') }}</div>
               <ul class="issues">
                 <li v-for="issue in structure.issues" :key="issue.column">
-                  {{ describeIssue(issue) }}<template v-if="issue.kind === 'currency'"> — or set the currency to “{{ issue.sheetCurrency }}”.</template>
+                  {{ issueText(issue) }}<template v-if="issue.kind === 'currency'"> {{ $t('editor.orCurrency', { currency: issue.sheetCurrency }) }}</template>
                 </li>
               </ul>
-              <p class="small">Expected header row: <code>{{ header }}</code></p>
-              <p class="small">You can save anyway; syncing stays paused (sessions are kept) until the sheet or settings are fixed.</p>
+              <p class="small">{{ $t('layout.expected') }} <code>{{ header }}</code></p>
+              <p class="small">{{ $t('editor.saveAnyway') }}</p>
             </div>
             <div v-if="conflict" class="alert warn">
-              <p class="small">“{{ conflict.name }}” already uses this tab. Each clock needs its own tab.</p>
+              <p class="small">{{ $t('editor.conflict', { name: conflict.name }) }}</p>
             </div>
           </template>
         </template>
       </fieldset>
 
       <div class="form-actions">
-        <a v-if="!wizard" href="#/clocks" class="btn ghost">Cancel</a>
+        <a v-if="!wizard" href="#/clocks" class="btn ghost">{{ $t('common.cancel') }}</a>
         <button type="submit" class="btn primary large" :disabled="!!busy">
-          {{ busy === 'save' ? 'Saving…' : wizard ? 'Start tracking' : 'Save' }}
+          {{ busy === 'save' ? $t('common.saving') : wizard ? $t('editor.start') : $t('common.save') }}
         </button>
       </div>
-      <p v-if="wizard && !draft.spreadsheetId" class="small muted center">You can connect the spreadsheet later; sessions are kept on this device meanwhile.</p>
+      <p v-if="wizard && !draft.spreadsheetId" class="small muted center">{{ $t('editor.connectLater') }}</p>
     </form>`,
 };

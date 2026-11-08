@@ -11,6 +11,7 @@ import { InstallBanner, UpdateBanner, Toasts } from './Banners.js';
 import { route, go } from '../router.js';
 import { store } from '../state/store.js';
 import { MOCK } from '../mode.js';
+import { i18n } from '../i18n/index.js';
 
 const VIEWS = {
   clock: 'ClockView',
@@ -21,9 +22,9 @@ const VIEWS = {
   google: 'SetupAssistant',
 };
 const TABS = [
-  { name: 'clock', href: '#/', icon: 'clock', label: 'Clock' },
-  { name: 'report', href: '#/report', icon: 'report', label: 'Report' },
-  { name: 'clocks', href: '#/clocks', icon: 'clocks', label: 'Clocks' },
+  { name: 'clock', href: '#/', icon: 'clock' },
+  { name: 'report', href: '#/report', icon: 'report' },
+  { name: 'clocks', href: '#/clocks', icon: 'clocks' },
 ];
 
 export default {
@@ -41,19 +42,20 @@ export default {
     const showTabs = computed(() => store.clocks.length > 0 && TABS.some((t) => t.name === route.name));
     const showSwitcher = computed(() => store.clocks.length > 0 && ['clock', 'report'].includes(route.name));
 
-    return { route, store, view, showTabs, showSwitcher, TABS, MOCK };
+    return { route, store, view, showTabs, showSwitcher, TABS, MOCK, i18n };
   },
+  // The root is keyed by language: switching re-renders everything, including formatted dates/numbers.
   template: /* html */`
-    <div class="app" :class="{ 'has-tabs': showTabs }">
+    <div class="app" :class="{ 'has-tabs': showTabs }" :key="i18n.locale">
       <header class="topbar">
         <label v-if="showSwitcher" class="switcher">
-          <span class="sr-only">Active clock</span>
+          <span class="sr-only">{{ $t('nav.activeClock') }}</span>
           <select v-model="store.activeClockId">
             <option v-for="c in store.clocks" :key="c.id" :value="c.id">{{ c.running ? '● ' : '' }}{{ c.name }}</option>
           </select>
         </label>
         <div v-else class="brand"><img src="assets/icons/icon.svg" alt="" width="26" height="26"><span>Clock In</span></div>
-        <span v-if="MOCK" class="tag info" title="Demo mode: fake spreadsheet in this browser">Demo</span>
+        <span v-if="MOCK" class="tag info" :title="$t('nav.demoHint')">{{ $t('nav.demo') }}</span>
       </header>
 
       <InstallBanner/>
@@ -63,10 +65,10 @@ export default {
         <component :is="view" :key="route.path" v-bind="route.params"/>
       </main>
 
-      <nav v-if="showTabs" class="tabbar" aria-label="Main">
-        <a v-for="t in TABS" :key="t.name" :href="t.href" :class="{ active: route.name === t.name }"
-           :aria-current="route.name === t.name ? 'page' : null">
-          <Icon :name="t.icon"/><span>{{ t.label }}</span>
+      <nav v-if="showTabs" class="tabbar" :aria-label="$t('nav.main')">
+        <a v-for="tab in TABS" :key="tab.name" :href="tab.href" :class="{ active: route.name === tab.name }"
+           :aria-current="route.name === tab.name ? 'page' : null">
+          <Icon :name="tab.icon"/><span>{{ $t('nav.' + tab.name) }}</span>
         </a>
       </nav>
 

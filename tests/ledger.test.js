@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  validateStructure, expectedHeader, describeIssue, setupRequests,
+  validateStructure, expectedHeader, setupRequests, deleteRowRequest, rowMatches,
   serialToISO, isoToSerial, parseDateCell, parsePaid, toNumber,
   parseRecords, lastDataRow, planSession, markPaidRequest, clearPaidRequest,
   summarize, hoursOn,
@@ -32,7 +32,6 @@ test('currency mismatch is reported, rows stay readable', () => {
   assert.equal(res.state, 'mismatch');
   assert.equal(res.readable, true);
   assert.deepEqual(res.issues, [{ column: 'C', expected: 'EUR/hour', found: 'USD/hour', kind: 'currency', sheetCurrency: 'USD' }]);
-  assert.equal(describeIssue(res.issues[0]), 'Column C: expected “EUR/hour”, found “USD/hour”');
 });
 
 test('renamed / missing columns are reported and not readable', () => {
@@ -41,14 +40,13 @@ test('renamed / missing columns are reported and not readable', () => {
   assert.equal(res.readable, false);
   assert.deepEqual(res.issues.map((i) => i.column), ['A', 'C', 'E']);
   assert.equal(res.issues[2].found, '');
-  assert.equal(describeIssue(res.issues[2]), 'Column E: expected “paid”, found an empty cell');
   assert.equal(res.issues[1].kind, undefined); // "Rate" is not a {currency}/hour header
 });
 
 test('unexpected F header is reported', () => {
   const res = validateStructure([[...HEADER.slice(0, 5), 'status']], 'USD');
   assert.equal(res.state, 'mismatch');
-  assert.equal(res.issues[0].column, 'F');
+  assert.deepEqual(res.issues, [{ column: 'F', expected: 'comment', found: 'status', optional: true }]);
 });
 
 test('data without a header is a mismatch', () => {
@@ -216,6 +214,33 @@ test('mark paid writes a date serial, clears legacy checkbox validation; undo cl
   const undo = clearPaidRequest(3, 5).updateCells;
   assert.deepEqual(undo.rows, [{ values: [{}] }]);
   assert.equal(undo.fields, 'userEnteredValue');
+});
+
+test('planSession writes a comment as text on a new row, appends it on an existing one', () => {
+  const fresh = planSession({ values: [HEADER], date: '2026-11-08', hours: 1, rate: 10, comment: '  Forgot to clock in ' });
+  assert.deepEqual(fresh.cells.at(-1), { cell: 'F2', value: "'Forgot to clock in" });
+
+  const values = [HEADER, [s('2026-11-08'), 1, 10, 10, '', 'Morning']];
+  const plan = planSession({ values, date: '2026-11-08', hours: 0.5, rate: 10, comment: 'Call' });
+  assert.deepEqual(plan.cells.at(-1), { cell: 'F2', value: "'Morning; Call" });
+
+  // No comment: F is left alone.
+  assert.ok(planSession({ values, date: '2026-11-08', hours: 0.5, rate: 10 }).cells.every((c) => !c.cell.startsWith('F')));
+});
+
+test('deleteRowRequest removes exactly that sheet row', () => {
+  assert.deepEqual(deleteRowRequest(3, 5), {
+    deleteDimension: { range: { sheetId: 3, dimension: 'ROWS', startIndex: 4, endIndex: 5 } },
+  });
+});
+
+test('rowMatches guards writes against rows that moved or changed', () => {
+  const record = { date: '2026-11-08', hours: 2.5 };
+  assert.equal(rowMatches([s('2026-11-08'), 2.5], record), true);
+  assert.equal(rowMatches(['2026-11-08', '2,5'], record), true);
+  assert.equal(rowMatches([s('2026-11-08'), 3], record), false); // same day, other row
+  assert.equal(rowMatches([s('2026-11-09'), 2.5], record), false);
+  assert.equal(rowMatches(undefined, record), false);
 });
 
 // ---------------------------------------------------------------------------

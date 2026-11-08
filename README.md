@@ -9,7 +9,13 @@ copies get their updates.
 - **Multiple clocks** (one per client/job). Each has its own currency, hourly rate, minimum time
   and sheet tab, and they can run at the same time.
 - **Report**: what is *due now*, filters by month and paid status, payouts grouped by date,
-  and a **Mark paid** button that writes today's date into the sheet (with Undo).
+  and a **Mark paid** button that writes today's date into the sheet (with Undo). Tap an entry to
+  **cancel its payment** or **delete** it; both ask for confirmation first.
+- **Manual entries** ("forgot to clock in"): date, hours, rate and an optional comment. They follow
+  the same rules as a clocked session (rounded up, added to the day's unpaid row).
+- **Languages**: English, Ukrainian, Polish, German, French, Spanish and Portuguese. The app follows
+  the browser language or the choice in *Clocks → App*. Only English ships with the app; another
+  language is downloaded when chosen, and only the one in use is kept on the device for offline use.
 - **Offline-first**: clock-outs are saved on the device first and synced when possible.
   Nothing is lost when offline, signed out, or while the sheet layout needs fixing.
 - **No backend.** The browser talks to Google directly with the `drive.file` scope, so the app
@@ -28,6 +34,10 @@ Each clock writes to one tab with this layout (row 1 = header):
   It writes the current hourly rate into C and the formula `=B*C` into D.
   A session that crosses midnight counts toward the day it started. A day already marked paid
   is never changed: more work on that day goes into a separate, unpaid row.
+- **Manual entries** follow the same rule. Their comment goes into F, appended with "; " when the
+  day already has one. Hours are rounded up to the clock's minimum tracked time.
+- **Delete** removes the entry's whole row (rows below move up, their formulas follow).
+  **Cancel payment** clears the paid cell. Both first re-read the row and stop if it changed.
 - **paid** holds the payout date. Older `TRUE`/`FALSE` (checkbox) values are still understood:
   `TRUE` counts as paid with no date. Marking a legacy checkbox row as paid replaces the checkbox
   with a date.
@@ -67,13 +77,18 @@ and direct links.
 3. [Google Auth Platform → Branding](https://console.cloud.google.com/auth/branding): enter the app
    name and support email, and set Audience to **External**. Under **Data access**, add the scopes
    `https://www.googleapis.com/auth/drive.file` and `https://www.googleapis.com/auth/userinfo.email`.
-   Both are non-sensitive, so no Google verification is needed. **Publish** the app, or add
-   users as testers.
+   Both are non-sensitive, so no Google verification is needed. Then go to **Audience → Publish app**
+   (status *In production*). While the app is in *Testing*, Google shows a
+   "Google hasn't verified this app" screen and blocks anyone not on the test-user list.
+   Don't upload a logo: that requires brand verification.
 4. [Create an OAuth client](https://console.cloud.google.com/auth/clients/create) of type **Web application**.
    Under **Authorized JavaScript origins** add `https://<user>.github.io`, and add
    `http://localhost:8000` for local development.
 5. [Create an API key](https://console.cloud.google.com/apis/credentials) for the file picker.
-   Restrict it to **Websites** `https://<user>.github.io/<repo>/*` and to the **Google Picker API**.
+   Restrict it to **Websites** `https://<user>.github.io/*` (plus `http://localhost:8000/*`) and
+   to the **Google Picker API**. Use the origin, not the repository path: the picker runs in a
+   cross-site frame, so browsers send only the origin as the referrer, and a path pattern makes
+   the picker fail with *"The API developer key is invalid"*.
 6. Copy the **project number** from [IAM & Admin → Settings](https://console.cloud.google.com/iam-admin/settings).
 7. Store the three values as **repository variables**: Settings → Secrets and variables →
    Actions → **Variables** → *New repository variable*:
@@ -119,13 +134,29 @@ through an import map, and components are plain ES modules with template strings
 When you add a runtime file, also add it to `ASSETS` in `sw.js`. `tests/sw-assets.test.js`
 fails until you do.
 
+### Translations
+
+UI text lives in `src/i18n/locales/<code>.json`, grouped one level deep (`report.dueNow`). Use it
+in templates as `{{ $t('report.dueNow') }}` and in code via `t()` from `src/i18n/index.js`.
+`{name}` placeholders are filled from params. A plural message is an object keyed by
+`Intl.PluralRules` category (`one`, `few`, `many`, `other`) and picks its form from `count`.
+Numbers, money and dates are formatted with `Intl` in the chosen language.
+
+- New text: add the key to `en.json` and to every other language. `tests/i18n.test.js` fails
+  until all languages have the same keys, placeholders and plural forms.
+- New language: add `locales/<code>.json` and list it in `src/i18n/languages.js`. Don't add it to
+  `ASSETS`: only `en.json` is precached, and the service worker stores just the language in use.
+- The Google Cloud setup assistant (shown only to whoever deploys the app) stays in English,
+  because it mirrors the Google Cloud Console steps.
+
 ```
 src/domain/      pure business rules (tested): ledger.js (sheet layout, parsing, write plans,
-                 report), time.js (rounding, threshold), format.js
+                 report), time.js (rounding, threshold), format.js (Intl formatting)
+src/i18n/        index.js (current language, t()), translate.js, languages.js, locales/*.json
 src/services/    google-auth.js, picker.js, sheets.js (REST), mock.js (demo backend),
                  timesheet.js (sheet operations), sync.js (offline queue), config.js
 src/state/       store.js (localStorage-backed state), now.js, toast.js
-src/components/  Vue components (App, ClockView, ReportView, ClocksView, ClockEditor, …)
+src/components/  Vue components (App, ClockView, ReportView, EntryDialog, EntryForm, Modal, …)
 src/pwa/         install prompt, service worker updates
 sw.js            precache + update channel
 tools/           dev scripts (run inside the container)
@@ -133,7 +164,7 @@ tools/           dev scripts (run inside the container)
 
 ## Data & privacy
 
-- Clocks, running timers and unsynced sessions live in the browser's `localStorage`.
+- Clocks, running timers, unsynced entries and the language choice live in the browser's `localStorage`.
   Installed apps ask the browser to keep that storage persistent.
 - Timesheet data only goes to Google Sheets, over the user's own Google account. There is no
   server and no analytics.

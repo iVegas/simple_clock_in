@@ -1,12 +1,19 @@
 // Persistent warning shown while a clock's sheet does not match the expected layout.
-// Writes stay paused (sessions queue locally) until the sheet or the settings are fixed.
+// Writes stay paused (entries queue locally) until the sheet or the settings are fixed.
 import { ref, computed } from 'vue';
 import Icon from './Icon.js';
-import { describeIssue, expectedHeader } from '../domain/ledger.js';
+import { t } from '../i18n/index.js';
+import { expectedHeader } from '../domain/ledger.js';
 import { syncClock } from '../services/sync.js';
 import { describeError } from '../services/errors.js';
 import { spreadsheetUrl } from '../services/util.js';
 import { toast } from '../state/toast.js';
+
+/** One structure issue from validateStructure(), in the UI language. */
+export function issueText(issue) {
+  const key = issue.optional ? 'issue.optional' : issue.found ? 'issue.found' : 'issue.empty';
+  return t(key, issue);
+}
 
 export default {
   name: 'StructureWarning',
@@ -23,9 +30,9 @@ export default {
       try {
         const res = await syncClock(props.clock.id, { interactive: true });
         if (props.clock.structure?.state === 'ok') {
-          toast(res.synced ? `Layout fixed. Synced ${res.synced} session(s).` : 'Layout matches now.', { tone: 'success' });
+          toast(res.synced ? t('layout.fixedSynced', { count: res.synced }) : t('layout.matches'), { tone: 'success' });
         } else {
-          toast('The layout still does not match.', { tone: 'warn' });
+          toast(t('layout.stillWrong'), { tone: 'warn' });
         }
       } catch (err) {
         toast(describeError(err), { tone: 'error' });
@@ -34,22 +41,22 @@ export default {
       }
     }
 
-    return { busy, visible, expected, url, recheck, describeIssue };
+    return { busy, visible, expected, url, recheck, issueText };
   },
   template: /* html */`
     <div v-if="visible" class="alert warn" role="alert">
-      <div class="alert-title"><Icon name="warning"/> Sheet “{{ clock.sheetTitle }}” doesn’t match the expected layout</div>
+      <div class="alert-title"><Icon name="warning"/> {{ $t('layout.title', { name: clock.sheetTitle }) }}</div>
       <ul class="issues">
         <li v-for="issue in clock.structure.issues" :key="issue.column">
-          {{ describeIssue(issue) }}<template v-if="issue.kind === 'currency'"> — or change this clock’s currency to “{{ issue.sheetCurrency }}”.</template>
+          {{ issueText(issue) }}<template v-if="issue.kind === 'currency'"> {{ $t('layout.orCurrency', { currency: issue.sheetCurrency }) }}</template>
         </li>
       </ul>
-      <p class="small">Expected header row: <code>{{ expected }}</code></p>
-      <p class="small">Saving to the sheet is paused. Sessions are kept on this device and sync once it’s fixed.</p>
+      <p class="small">{{ $t('layout.expected') }} <code>{{ expected }}</code></p>
+      <p class="small">{{ $t('layout.paused') }}</p>
       <div class="row wrap">
-        <a class="btn small" :href="url" target="_blank" rel="noopener"><Icon name="external"/> Open sheet</a>
-        <button class="btn small" :disabled="busy" @click="recheck"><Icon name="refresh"/> Re-check</button>
-        <a class="btn small ghost" :href="'#/clock/' + clock.id">Clock settings</a>
+        <a class="btn small" :href="url" target="_blank" rel="noopener"><Icon name="external"/> {{ $t('layout.openSheet') }}</a>
+        <button class="btn small" :disabled="busy" @click="recheck"><Icon name="refresh"/> {{ $t('layout.recheck') }}</button>
+        <a class="btn small ghost" :href="'#/clock/' + clock.id">{{ $t('layout.clockSettings') }}</a>
       </div>
     </div>`,
 };
