@@ -46,19 +46,21 @@ function totalsLabels() {
  * Set up an empty tab from the clock's settings: header, formats, sorted/filtered view, totals.
  * @param {{currency: string, headers?: object}} settings
  */
-export function setupSheet(spreadsheetId, sheetId, { currency, headers }, opts) {
-  return backend.sheets.batchUpdate(spreadsheetId, setupRequests(sheetId, currency, { headers, totals: totalsLabels() }), opts);
+export async function setupSheet(spreadsheetId, sheetId, { currency, headers }, opts) {
+  await backend.sheets.batchUpdate(spreadsheetId, setupRequests(sheetId, currency, { headers, totals: totalsLabels() }), opts);
+  // The view on its own: the tab is usable even if Sheets refuses the filter.
+  await backend.sheets.batchUpdate(spreadsheetId, filterRequests(sheetId, viewFilter(sheetId)), opts)
+    .catch((err) => console.warn('Could not set the sheet filter', err));
 }
 
 /**
  * Give an existing tab the same view as a new one: newest first, paid rows hidden, totals in H1:P1.
  * @param {{sheetId: number, basicFilter?: object}} tab from getMeta
  */
-export function applySheetView(spreadsheetId, tab, { currency }, opts) {
-  return backend.sheets.batchUpdate(spreadsheetId, [
-    ...filterRequests(tab.sheetId, viewFilter(tab.sheetId), { hasFilter: !!tab.basicFilter }),
-    totalsRequest(tab.sheetId, currency, totalsLabels()),
-  ], opts);
+export async function applySheetView(spreadsheetId, tab, { currency }, opts) {
+  // Separate requests (a batch is all-or-nothing): a refused filter must not cost the totals.
+  await backend.sheets.batchUpdate(spreadsheetId, [totalsRequest(tab.sheetId, currency, totalsLabels())], opts);
+  await backend.sheets.batchUpdate(spreadsheetId, filterRequests(tab.sheetId, viewFilter(tab.sheetId), { hasFilter: !!tab.basicFilter }), opts);
 }
 
 /** Rename the header row to the clock's names (when the tab matched the previous names). */

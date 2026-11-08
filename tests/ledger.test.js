@@ -334,12 +334,12 @@ test('viewFilter sorts by date (newest first) and hides paid rows on A–F', () 
   assert.deepEqual(f.range, { sheetId: 9, startRowIndex: 0, startColumnIndex: 0, endColumnIndex: 6 });
   assert.deepEqual(f.sortSpecs, [{ dimensionIndex: 0, sortOrder: 'DESCENDING' }]);
   assert.equal(f.filterSpecs[0].columnIndex, 4);
-  assert.match(f.filterSpecs[0].filterCriteria.condition.values[0].userEnteredValue, /E2<>TRUE/);
+  assert.equal(f.filterSpecs[0].filterCriteria.condition.values[0].userEnteredValue, '=(ISNUMBER(E2)+(E2=(1=1)))=0');
 });
 
-test('setupRequests sets the view and, when labels are given, the totals', () => {
+test('setupRequests writes layout and, when labels are given, the totals (the filter goes separately)', () => {
   const plain = setupRequests(7, 'EUR');
-  assert.ok(plain.some((r) => r.setBasicFilter));
+  assert.ok(!plain.some((r) => r.setBasicFilter));
   assert.ok(!plain.some((r) => r.updateCells?.start?.columnIndex === TOTALS_COLUMN));
   const labels = { due: 'Due now', paid: 'Paid', total: 'Total', hoursUnit: 'hr' };
   assert.ok(setupRequests(7, 'EUR', { totals: labels }).some((r) => r.updateCells?.start?.columnIndex === TOTALS_COLUMN));
@@ -362,8 +362,22 @@ test('totalsRequest: due / paid / total, amount and hours, in H1:P1', () => {
   const cells = req.rows[0].values;
   assert.equal(cells.length, 9);
   assert.deepEqual([0, 3, 6].map((i) => cells[i].userEnteredValue.stringValue), ['Due now', 'Paid', 'Total']);
-  assert.match(cells[1].userEnteredValue.formulaValue, /^=ARRAYFORMULA\(SUM\(.*\(1-SIGN\(\(E2:E=TRUE\)\+ISNUMBER\(E2:E\)\)\)\*D2:D/);
+  assert.equal(cells[1].userEnteredValue.formulaValue, "=ARRAYFORMULA(SUM(IFERROR(ISNUMBER(A2:A)*(1-(ISNUMBER(E2:E)+(E2:E=(1=1))))*D2:D)))");
   assert.match(cells[5].userEnteredValue.formulaValue, /\*B2:B/);
   assert.equal(cells[7].userEnteredFormat.numberFormat.pattern, '#,##0.00" USD"');
   assert.equal(cells[8].userEnteredFormat.numberFormat.pattern, '0.00" hr"');
+});
+
+test('sheet formulas have no commas or TRUE (they must parse in every spreadsheet locale)', () => {
+  const labels = { due: 'Due now', paid: 'Paid', total: 'Total', hoursUnit: 'hr' };
+  const formulas = [
+    viewFilter(1).filterSpecs[0].filterCriteria.condition.values[0].userEnteredValue,
+    ...totalsRequest(1, 'USD', labels).updateCells.rows[0].values.map((v) => v.userEnteredValue.formulaValue).filter(Boolean),
+    planSession({ values: [HEADER], date: '2026-11-08', hours: 1, rate: 10 }).cells.find((c) => c.cell === 'D2').value,
+  ];
+  assert.equal(formulas.length, 8);
+  for (const f of formulas) {
+    assert.doesNotMatch(f, /[,;]/, f);
+    assert.doesNotMatch(f, /TRUE|FALSE/, f);
+  }
 });

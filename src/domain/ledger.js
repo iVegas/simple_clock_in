@@ -146,9 +146,14 @@ export function headerRequest(sheetId, currency, headers) {
 // ---------------------------------------------------------------------------
 // Sheet view: newest first, paid rows hidden, totals in the header row.
 
-/** Row is paid in the sheet's own terms: TRUE (legacy checkbox) or a date. */
-const PAID_FORMULA = 'SIGN((E2:E=TRUE)+ISNUMBER(E2:E))';
-const sumWhere = (column, condition) => `=ARRAYFORMULA(SUM(IFERROR(ISNUMBER(A2:A)*${condition}*${column}2:${column},0)))`;
+// Formulas contain no commas and no TRUE: Sheets parses them in the spreadsheet's locale, where the
+// argument separator may be ";" (uk_UA, de_DE, …) and names may be localized. (1=1) is TRUE, and
+// IFERROR(x) without its optional second argument gives a blank on error.
+
+/** 1 when the cell(s) are paid in the sheet's own terms: a date (number) or TRUE (legacy checkbox). */
+const isPaid = (cell) => `(ISNUMBER(${cell})+(${cell}=(1=1)))`;
+const PAID_FORMULA = isPaid('E2:E');
+const sumWhere = (column, condition) => `=ARRAYFORMULA(SUM(IFERROR(ISNUMBER(A2:A)*${condition}*${column}2:${column})))`;
 
 /** First column of the totals block (H) and its cells: label, amount, hours × due/paid/total. */
 export const TOTALS_COLUMN = 7;
@@ -164,7 +169,8 @@ export function viewFilter(sheetId) {
     sortSpecs: [{ dimensionIndex: COL.date, sortOrder: 'DESCENDING' }],
     filterSpecs: [{
       columnIndex: COL.paid,
-      filterCriteria: { condition: { type: 'CUSTOM_FORMULA', values: [{ userEnteredValue: '=AND(E2<>TRUE,NOT(ISNUMBER(E2)))' }] } },
+      // Shown when not paid. E2 = the first data row; Sheets applies it to every row.
+      filterCriteria: { condition: { type: 'CUSTOM_FORMULA', values: [{ userEnteredValue: `=${isPaid('E2')}=0` }] } },
     }],
   };
 }
@@ -220,7 +226,11 @@ export function totalsRequest(sheetId, currency, labels) {
   };
 }
 
-/** Sheets batchUpdate requests that set up an empty tab for a clock (layout + view + totals). */
+/**
+ * Sheets batchUpdate requests that set up an empty tab for a clock: layout and totals.
+ * The view filter is sent separately (filterRequests + viewFilter), so a rejected filter never
+ * costs the layout or the totals.
+ */
 export function setupRequests(sheetId, currency, { headers, totals } = {}) {
   const formatColumns = (start, end, numberFormat) => ({
     repeatCell: {
@@ -240,7 +250,6 @@ export function setupRequests(sheetId, currency, { headers, totals } = {}) {
     formatColumns(COL.date, COL.date + 1, DATE_FORMAT),
     formatColumns(COL.hours, COL.sum + 1, NUMBER_FORMAT),
     formatColumns(COL.paid, COL.paid + 1, DATE_FORMAT),
-    { setBasicFilter: { filter: viewFilter(sheetId) } },
     ...(totals ? [totalsRequest(sheetId, currency, totals)] : []),
   ];
 }
