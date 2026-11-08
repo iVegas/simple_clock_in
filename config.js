@@ -1,7 +1,8 @@
-// Google API configuration for this deployment (see README → "Google Cloud setup").
-// These values are public by design: the OAuth client only works from your authorized
-// origin, and the API key should be restricted to the Picker API + your site URL.
-// Leave empty to get the in-app setup assistant.
+// Google API configuration (see README → "Google Cloud setup").
+// On GitHub Pages this file is regenerated at deploy time from the repository variables
+// GOOGLE_CLIENT_ID / GOOGLE_API_KEY / GOOGLE_APP_ID; keep it empty here for local development
+// (the in-app setup assistant can store values per device). The values are public by design:
+// the OAuth client only works from your authorized origin, the API key is referrer-restricted.
 window.CLOCKIN_CONFIG = {
   googleClientId: '', // e.g. 1234567890-abc123.apps.googleusercontent.com
   googleApiKey: '',   // e.g. AIzaSy...

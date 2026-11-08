@@ -24,9 +24,14 @@ jobs:
       - name: Unit tests
         run: make test
 
-      # Copies the publishable files to _site/ and stamps the commit SHA into
-      # sw.js + src/version.js, which is what makes installed apps update.
+      # Copies the publishable files to _site/, generates config.js from the repository
+      # variables (Settings → Secrets and variables → Actions → Variables) when they are set,
+      # and stamps the version into sw.js + src/version.js so installed apps update.
       - name: Assemble site
+        env:
+          GOOGLE_CLIENT_ID: ${{ vars.GOOGLE_CLIENT_ID }}
+          GOOGLE_API_KEY: ${{ vars.GOOGLE_API_KEY }}
+          GOOGLE_APP_ID: ${{ vars.GOOGLE_APP_ID }}
         run: make site VERSION="${GITHUB_SHA::7}"
 
       - uses: actions/configure-pages@v5

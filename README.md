@@ -75,19 +75,26 @@ and direct links.
 5. [Create an API key](https://console.cloud.google.com/apis/credentials) for the file picker.
    Restrict it to **Websites** `https://<user>.github.io/<repo>/*` and to the **Google Picker API**.
 6. Copy the **project number** from [IAM & Admin → Settings](https://console.cloud.google.com/iam-admin/settings).
-7. Put the three values into `config.js` and push:
+7. Store the three values as **repository variables**: Settings → Secrets and variables →
+   Actions → **Variables** → *New repository variable*:
 
-   ```js
-   window.CLOCKIN_CONFIG = {
-     googleClientId: '1234567890-abc.apps.googleusercontent.com',
-     googleApiKey: 'AIza…',
-     googleAppId: '1234567890',
-   };
-   ```
+   | Variable | Value |
+   |---|---|
+   | `GOOGLE_CLIENT_ID` | `1234567890-abc.apps.googleusercontent.com` |
+   | `GOOGLE_API_KEY` | `AIza…` |
+   | `GOOGLE_APP_ID` | `1234567890` (project number) |
 
-   These values are public by design: the OAuth client only works from your authorized origin,
-   and the key is restricted. Until `config.js` is filled in, the app shows the setup assistant,
-   which can also save the values on a single device.
+   Or use the CLI: `gh variable set GOOGLE_CLIENT_ID --body '…'`, and the same for the other two.
+
+   The workflow generates `config.js` from these on every deploy, so the committed `config.js`
+   stays empty. After changing a variable, re-run the latest *Deploy to GitHub Pages* workflow.
+   The config is part of the version stamp, so installed apps pick up the change.
+   (Committing the values into `config.js` also works; the variables win when they are set.)
+
+   Use *variables*, not *secrets*: the values end up in the published `config.js` anyway.
+   They are public by design, because the OAuth client only works from your authorized origin
+   and the key is restricted. Until they are set, the app shows the setup assistant, which can
+   also save the values on a single device.
 
 Google access tokens last one hour. When one expires, the next Clock out or Mark paid shows a
 short Google popup that closes by itself.

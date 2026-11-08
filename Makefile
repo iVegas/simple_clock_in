@@ -42,8 +42,8 @@ vendor: ## Vendor the latest Vue $(VUE_VERSION).x ESM browser build into vendor/
 icons: ## Render assets/icons PNGs from the SVG sources
 	$(RUN) sh tools/icons.sh
 
-site: ## Assemble the deployable _site/ (VERSION=... to stamp)
-	$(RUN) sh tools/build-site.sh $(VERSION)
+site: ## Assemble the deployable _site/ (VERSION=..., optional GOOGLE_* env -> config.js)
+	docker compose run --rm -e GOOGLE_CLIENT_ID -e GOOGLE_API_KEY -e GOOGLE_APP_ID dev sh tools/build-site.sh $(VERSION)
 
 shell: ## Open a shell in the dev container
 	docker compose run --rm dev sh

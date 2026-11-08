@@ -107,9 +107,18 @@ export default {
           <button v-if="hasOverride()" type="button" class="btn ghost" @click="reset">Use config.js</button>
           <button type="submit" class="btn primary">Save on this device</button>
         </div>
-        <p class="small muted">To configure it for everyone, put this into <code>config.js</code> in the repository and push:</p>
-        <pre class="snippet">{{ snippet }}</pre>
-        <button type="button" class="btn small" @click="copy(snippet)">Copy config.js</button>
+        <p class="small muted">
+          To configure it for everyone, add them as GitHub <strong>repository variables</strong>
+          (Settings › Secrets and variables › Actions › Variables) and re-run the deploy workflow:
+        </p>
+        <div class="copy-row"><code>GOOGLE_CLIENT_ID</code><button type="button" class="btn small" @click="copy(form.googleClientId)" :disabled="!form.googleClientId">Copy value</button></div>
+        <div class="copy-row"><code>GOOGLE_API_KEY</code><button type="button" class="btn small" @click="copy(form.googleApiKey)" :disabled="!form.googleApiKey">Copy value</button></div>
+        <div class="copy-row"><code>GOOGLE_APP_ID</code><button type="button" class="btn small" @click="copy(form.googleAppId)" :disabled="!form.googleAppId">Copy value</button></div>
+        <details class="small muted">
+          <summary>…or commit them in config.js</summary>
+          <pre class="snippet">{{ snippet }}</pre>
+          <button type="button" class="btn small" @click="copy(snippet)">Copy config.js</button>
+        </details>
       </form>
     </section>`,
 };
