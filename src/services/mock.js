@@ -78,6 +78,29 @@ function evaluate(cells, v, depth = 0) {
   return get(m[1], m[2]) * get(m[3], m[4]);
 }
 
+/** sortRange on whole rows. Like Sheets, a formula that refers to its own row follows the row. */
+function sortRows(tab, { range, sortSpecs }) {
+  const start = range.startRowIndex ?? 0;
+  const end = Math.min(range.endRowIndex ?? Infinity, tab.cells.length);
+  if (end <= start) return;
+  const rows = tab.cells.slice(start, end).map((cells, i) => ({ cells: cells ?? [], from: start + i + 1 }));
+  const value = (row, col) => evaluate(tab.cells, row.cells[col]);
+  rows.sort((a, b) => {
+    for (const { dimensionIndex: col, sortOrder } of sortSpecs) {
+      const [x, y] = [value(a, col), value(b, col)];
+      if (x === '' || y === '') { if (x !== y) return x === '' ? 1 : -1; continue; } // blanks always last
+      const cmp = typeof x === 'number' && typeof y === 'number' ? x - y : String(x).localeCompare(String(y));
+      if (cmp) return sortOrder === 'DESCENDING' ? -cmp : cmp;
+    }
+    return 0;
+  });
+  rows.forEach((row, i) => {
+    const to = start + i + 1;
+    tab.cells[to - 1] = row.cells.map((v) => (typeof v === 'string' && v.startsWith('=')
+      ? v.replace(/([A-Z])(\d+)/g, (m, c, r) => (Number(r) === row.from ? `${c}${to}` : m)) : v));
+  });
+}
+
 export function createMockBackend() {
   const db = () => readJSON(DATA_KEY) ?? (resetMockData(), readJSON(DATA_KEY));
   const save = (data) => writeJSON(DATA_KEY, data);
@@ -103,7 +126,9 @@ export function createMockBackend() {
 
   const meta = (id, s) => ({
     id, title: s.title, locale: s.locale,
-    tabs: s.tabs.map((t, index) => ({ sheetId: t.sheetId, title: t.title, index, rowCount: t.rowCount, columnCount: 26 })),
+    tabs: s.tabs.map((t, index) => ({
+      sheetId: t.sheetId, title: t.title, index, rowCount: t.rowCount, columnCount: 26, basicFilter: t.basicFilter ?? null,
+    })),
   });
 
   // --- auth -------------------------------------------------------------------
@@ -205,6 +230,13 @@ export function createMockBackend() {
           // Formulas below the removed rows follow them up (=B7*C7 -> =B6*C6), like Sheets does.
           const shift = (f) => f.replace(/([A-Z])(\d+)/g, (m, c, r) => (Number(r) > endIndex ? `${c}${Number(r) - n}` : m));
           for (const row of tab.cells) row?.forEach((v, c) => { if (typeof v === 'string' && v.startsWith('=')) row[c] = shift(v); });
+        } else if (req.setBasicFilter) {
+          const { filter } = req.setBasicFilter;
+          tabBy(s, (t) => t.sheetId === filter.range.sheetId, filter.range.sheetId).basicFilter = filter; // hiding rows: display only
+        } else if (req.clearBasicFilter) {
+          delete tabBy(s, (t) => t.sheetId === req.clearBasicFilter.sheetId, req.clearBasicFilter.sheetId).basicFilter;
+        } else if (req.sortRange) {
+          sortRows(tabBy(s, (t) => t.sheetId === req.sortRange.range.sheetId, req.sortRange.range.sheetId), req.sortRange);
         } else if (req.updateCells) {
           const u = req.updateCells;
           const sheetId = u.start?.sheetId ?? u.range.sheetId;

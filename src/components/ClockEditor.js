@@ -1,6 +1,7 @@
 // Create / edit a clock: settings first (they define the sheet layout), then the Google Sheet.
 import { ref, reactive, computed, onMounted } from 'vue';
 import Icon from './Icon.js';
+import ClockAdvanced from './ClockAdvanced.js';
 import { store, clockById } from '../state/store.js';
 import { toast } from '../state/toast.js';
 import { t } from '../i18n/index.js';
@@ -10,11 +11,13 @@ import { MOCK } from '../mode.js';
 import { backend } from '../services/backend.js';
 import { isConfigured } from '../services/config.js';
 import { quoteSheet } from '../services/sheets.js';
-import { setupSheet, createTimesheet } from '../services/timesheet.js';
+import { setupSheet, createTimesheet, writeHeader } from '../services/timesheet.js';
 import { syncClock } from '../services/sync.js';
 import { describeError } from '../services/errors.js';
 import { uid, spreadsheetUrl } from '../services/util.js';
-import { DATA_RANGE, validateStructure, expectedHeader } from '../domain/ledger.js';
+import {
+  DATA_RANGE, validateStructure, expectedHeader, headersOf, headersValid, isDefaultHeaders, headersFromSheet,
+} from '../domain/ledger.js';
 import { formatHours } from '../domain/format.js';
 import { UNIT_PRESETS, isValidUnit, round2 } from '../domain/time.js';
 
@@ -22,7 +25,7 @@ const CURRENCIES = ['USD', 'EUR', 'GBP', 'UAH', 'PLN', 'CZK', 'CHF', 'CAD', 'AUD
 
 export default {
   name: 'ClockEditor',
-  components: { Icon },
+  components: { Icon, ClockAdvanced },
   props: { id: { type: String, default: 'new' }, wizard: Boolean },
   setup(props) {
     const isNew = props.id === 'new';
@@ -39,6 +42,7 @@ export default {
       sheetId: existing?.sheetId ?? null,
       sheetTitle: existing?.sheetTitle ?? '',
     });
+    const headers = reactive(headersOf(existing?.headers)); // advanced: header names
     const initialUnit = existing?.unitHours ?? 0.25;
     const unitChoice = ref(UNIT_PRESETS.includes(initialUnit) ? initialUnit : 'custom');
     const customUnit = ref(unitChoice.value === 'custom' ? initialUnit : '');
@@ -50,8 +54,15 @@ export default {
     const touched = ref(false);
 
     const configured = computed(() => MOCK || isConfigured());
-    const structure = computed(() => (sheet.values ? validateStructure(sheet.values, draft.currency.trim()) : null));
-    const header = computed(() => expectedHeader(draft.currency.trim() || '{currency}').join(' | '));
+    const structure = computed(() => (sheet.values ? validateStructure(sheet.values, draft.currency.trim(), headers) : null));
+    const selectedTab = computed(() => sheet.tabs.find((tab) => tab.sheetId === draft.sheetId) ?? null);
+    // Only the names differ from what the tab had (previous names, or the defaults): rename its header on save.
+    const renameHeader = computed(() => {
+      if (structure.value?.state !== 'mismatch') return false;
+      const sameTab = existing && existing.spreadsheetId === draft.spreadsheetId && existing.sheetId === draft.sheetId;
+      return validateStructure(sheet.values, draft.currency.trim(), sameTab ? existing.headers : null).state === 'ok';
+    });
+    const header = computed(() => expectedHeader(draft.currency.trim() || '{currency}', headers).join(' | '));
     const url = computed(() => (draft.spreadsheetId ? spreadsheetUrl(draft.spreadsheetId, draft.sheetId) : ''));
     const conflict = computed(() => (draft.spreadsheetId
       ? store.clocks.find((c) => c.id !== existing?.id && c.spreadsheetId === draft.spreadsheetId && c.sheetId === draft.sheetId)
@@ -62,6 +73,7 @@ export default {
       currency: draft.currency.trim() ? '' : t('editor.errCurrency'),
       rate: typeof draft.rate === 'number' && draft.rate >= 0 ? '' : t('editor.errRate'),
       unit: isValidUnit(unitHours.value) ? '' : t('editor.errUnit'),
+      headers: headersValid(headers) ? '' : t('editor.errHeaders'),
     }));
     const invalid = computed(() => Object.values(errors.value).some(Boolean));
 
@@ -108,7 +120,7 @@ export default {
     const createNew = () => run('create', async () => {
       if (errors.value.currency) throw new Error(t('editor.currencyFirst'));
       const created = await createTimesheet(
-        { title: t('editor.timesheetTitle', { name: draft.name.trim() || 'Clock In' }), currency: draft.currency.trim() },
+        { title: t('editor.timesheetTitle', { name: draft.name.trim() || 'Clock In' }), currency: draft.currency.trim(), headers },
         { interactive: true },
       );
       Object.assign(draft, created);
@@ -116,6 +128,7 @@ export default {
       toast(t('editor.created'), { tone: 'success' });
     });
 
+    const adoptTabHeaders = () => Object.assign(headers, headersFromSheet(sheet.values?.[0], draft.currency.trim(), headers));
     const changeTab = (e) => run('tabs', () => selectTab(Number(e.target.value)));
     const checkLayout = () => run('tabs', () => loadTabs(true));
 
@@ -128,13 +141,17 @@ export default {
       }
       const currency = draft.currency.trim();
       if (draft.spreadsheetId && draft.sheetId !== null && structure.value?.state === 'empty') {
-        await setupSheet(draft.spreadsheetId, draft.sheetId, currency, { interactive: true });
+        await setupSheet(draft.spreadsheetId, draft.sheetId, { currency, headers }, { interactive: true });
+      } else if (draft.spreadsheetId && renameHeader.value) {
+        await writeHeader(draft.spreadsheetId, draft.sheetId, { currency, headers }, { interactive: true });
+        toast(t('editor.headerRenamed'), { tone: 'success' });
       }
       const data = {
         name: draft.name.trim(),
         currency,
         rate: draft.rate,
         unitHours: unitHours.value,
+        headers: isDefaultHeaders(headers) ? null : headersOf(headers),
         spreadsheetId: draft.spreadsheetId || null,
         spreadsheetTitle: draft.spreadsheetTitle,
         sheetId: draft.sheetId,
@@ -168,9 +185,9 @@ export default {
     });
 
     return {
-      isNew, draft, auth, sheet, busy, touched, configured, structure, header, url, conflict, errors,
+      isNew, draft, headers, auth, sheet, busy, touched, configured, structure, selectedTab, renameHeader, header, url, conflict, errors,
       unitChoice, customUnit, unitHours, unitMinutes, UNIT_PRESETS, CURRENCIES,
-      signIn, choose, createNew, changeTab, checkLayout, save, issueText, formatHours,
+      signIn, choose, createNew, changeTab, checkLayout, adoptTabHeaders, save, issueText, formatHours,
     };
   },
   template: /* html */`
@@ -268,6 +285,10 @@ export default {
               <code class="small">{{ header }}</code>
             </div>
             <p v-else-if="structure?.state === 'ok'" class="ok-line small"><Icon name="check"/> {{ $t('editor.layoutOk') }}</p>
+            <div v-else-if="renameHeader" class="alert info">
+              <p class="small">{{ $t('editor.renameHeader') }}</p>
+              <code class="small">{{ header }}</code>
+            </div>
             <div v-else-if="structure?.state === 'mismatch'" class="alert warn">
               <div class="alert-title"><Icon name="warning"/> {{ $t('editor.mismatchTitle') }}</div>
               <ul class="issues">
@@ -277,6 +298,10 @@ export default {
               </ul>
               <p class="small">{{ $t('layout.expected') }} <code>{{ header }}</code></p>
               <p class="small">{{ $t('editor.saveAnyway') }}</p>
+              <div v-if="structure.issues.some((i) => i.kind !== 'currency')" class="row wrap">
+                <span class="small">{{ $t('editor.sameColumns') }}</span>
+                <button type="button" class="btn small" @click="adoptTabHeaders">{{ $t('editor.useTabNames') }}</button>
+              </div>
             </div>
             <div v-if="conflict" class="alert warn">
               <p class="small">{{ $t('editor.conflict', { name: conflict.name }) }}</p>
@@ -284,6 +309,10 @@ export default {
           </template>
         </template>
       </fieldset>
+
+      <ClockAdvanced :headers="headers" :currency="draft.currency.trim()" :spreadsheet-id="draft.spreadsheetId"
+                     :tab="selectedTab" :can-adopt="!!sheet.values?.[0]?.length" :layout-ok="structure?.state === 'ok'"
+                     :error="errors.headers" @adopt="adoptTabHeaders" @applied="checkLayout"/>
 
       <div class="form-actions">
         <a v-if="!wizard" href="#/clocks" class="btn ghost">{{ $t('common.cancel') }}</a>

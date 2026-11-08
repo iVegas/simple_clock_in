@@ -57,7 +57,10 @@
   "report": {
     "dueNow": "À payer",
     "refresh": "Actualiser depuis la feuille",
-    "dueSummary": { "one": "{hours} · {count} jour impayé", "other": "{hours} · {count} jours impayés" },
+    "dueSummary": {
+      "one": "{hours} · {count} jour impayé",
+      "other": "{hours} · {count} jours impayés"
+    },
     "updated": "mis à jour à {time}",
     "pending": {
       "one": "{count} saisie en attente de synchronisation n’est pas encore incluse.",
@@ -130,7 +133,10 @@
     "deleteConfirm": "Touchez à nouveau pour supprimer",
     "deleteConfirmLoss": "Touchez à nouveau pour supprimer — perte : {what}",
     "lossRunning": "la session en cours",
-    "lossPending": { "one": "{count} saisie non synchronisée", "other": "{count} saisies non synchronisées" },
+    "lossPending": {
+      "one": "{count} saisie non synchronisée",
+      "other": "{count} saisies non synchronisées"
+    },
     "deleted": "« {name} » supprimée. Sa feuille n’a pas été modifiée.",
     "add": "Ajouter une pointeuse"
   },
@@ -211,7 +217,37 @@
     "timesheetTitle": "{name} – feuille de temps",
     "created": "Nouvelle feuille créée dans votre Google Drive.",
     "ready": "« {name} » est prête.",
-    "saved": "Pointeuse enregistrée."
+    "saved": "Pointeuse enregistrée.",
+    "advanced": "Réglages avancés",
+    "headersTitle": "En-têtes de colonnes",
+    "headersHint": "Renommez la ligne d’en-tête, par exemple pour correspondre à un tableau existant ou à votre langue. L’ordre des colonnes reste A–F.",
+    "roleDate": "Date",
+    "roleHours": "Heures",
+    "roleRate": "Taux horaire",
+    "roleSum": "Montant (heures × taux)",
+    "rolePaid": "Payé (date de paiement)",
+    "roleComment": "Commentaire",
+    "rateHint": "{token} dans le nom de la colonne du taux est remplacé par la devise de la pointeuse.",
+    "errHeaders": "Chaque colonne a besoin de son propre nom.",
+    "fillIn": "Remplir :",
+    "fromTab": "Depuis cet onglet",
+    "sameColumns": "Mêmes colonnes sous d’autres noms ?",
+    "useTabNames": "Utiliser les noms de cet onglet",
+    "renameHeader": "Seuls les noms des colonnes diffèrent. À l’enregistrement, la ligne d’en-tête de l’onglet sera renommée en :",
+    "headerRenamed": "Ligne d’en-tête renommée dans la feuille.",
+    "viewTitle": "Affichage de la feuille",
+    "viewHint": "Saisies les plus récentes en haut, saisies payées masquées par un filtre (modifiable par tous depuis la ligne d’en-tête dans Sheets), et totaux en {range}. Les nouveaux onglets l’ont automatiquement.",
+    "applyView": "Appliquer à cet onglet",
+    "viewNeedsLayout": "Disponible une fois que l’onglet correspond à la structure.",
+    "viewApplied": "Affichage appliqué : plus récentes en haut, payées masquées, totaux en {range}."
+  },
+  "sheetHeaders": {
+    "date": "Date",
+    "hours": "Heures",
+    "rate": "{currency}/h",
+    "sum": "Montant",
+    "paid": "Payé",
+    "comment": "Commentaire"
   },
   "setup": {
     "tagline": "Suivez votre temps de travail en un geste. Chaque session va directement dans votre feuille Google.",
@@ -225,7 +261,10 @@
     "openSheet": "Ouvrir la feuille",
     "recheck": "Revérifier",
     "clockSettings": "Réglages de la pointeuse",
-    "fixedSynced": { "one": "Structure corrigée. {count} saisie synchronisée.", "other": "Structure corrigée. {count} saisies synchronisées." },
+    "fixedSynced": {
+      "one": "Structure corrigée. {count} saisie synchronisée.",
+      "other": "Structure corrigée. {count} saisies synchronisées."
+    },
     "matches": "La structure correspond maintenant.",
     "stillWrong": "La structure ne correspond toujours pas."
   },
@@ -236,9 +275,15 @@
   },
   "sync": {
     "syncing": "Synchronisation…",
-    "waiting": { "one": "{count} saisie ({hours}) en attente de synchronisation", "other": "{count} saisies ({hours}) en attente de synchronisation" },
+    "waiting": {
+      "one": "{count} saisie ({hours}) en attente de synchronisation",
+      "other": "{count} saisies ({hours}) en attente de synchronisation"
+    },
     "now": "Synchroniser",
-    "synced": { "one": "{count} saisie synchronisée.", "other": "{count} saisies synchronisées." },
+    "synced": {
+      "one": "{count} saisie synchronisée.",
+      "other": "{count} saisies synchronisées."
+    },
     "blocked": "La structure de la feuille doit être corrigée ; les saisies restent sur cet appareil."
   },
   "error": {

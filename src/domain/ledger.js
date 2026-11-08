@@ -3,6 +3,7 @@
 //
 // Expected sheet layout (row 1 = header):
 //   A Date | B Hours | C {currency}/hour | D sum (=B*C) | E paid | F comment (optional)
+// (header names can be renamed per clock; the column order is fixed). Totals live in H1:P1.
 import { round2 } from './time.js';
 
 export const COL = { date: 0, hours: 1, rate: 2, sum: 3, paid: 4, comment: 5 };
@@ -16,45 +17,84 @@ const DATE_FORMAT = { type: 'DATE', pattern: 'yyyy-mm-dd' };
 const NUMBER_FORMAT = { type: 'NUMBER', pattern: '0.00' };
 
 export const isBlank = (v) => v === null || v === undefined || (typeof v === 'string' && v.trim() === '');
-const norm = (v) => String(v ?? '').trim().toLowerCase().replace(/\s*\/\s*/g, '/').replace(/\s+/g, ' ');
-const RATE_HEADER = /^(.+?)\s*\/\s*h(?:ou)?r?$/i;
+/** Whitespace-normalized text ("USD / hour" -> "USD/hour"), case kept. */
+const squash = (v) => String(v ?? '').trim().replace(/\s*\/\s*/g, '/').replace(/\s+/g, ' ');
+const norm = (v) => squash(v).toLowerCase();
+const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 // ---------------------------------------------------------------------------
 // Structure
 
-export function expectedHeader(currency) {
-  return ['Date', 'Hours', `${String(currency ?? '').trim()}/hour`, 'sum', 'paid', 'comment'];
+/** Header names, one per column A–F. A clock may rename them (advanced settings). */
+export const HEADER_KEYS = ['date', 'hours', 'rate', 'sum', 'paid', 'comment'];
+export const CURRENCY_TOKEN = '{currency}';
+export const DEFAULT_HEADERS = Object.freeze({
+  date: 'Date', hours: 'Hours', rate: `${CURRENCY_TOKEN}/hour`, sum: 'sum', paid: 'paid', comment: 'comment',
+});
+
+/** Clock's header names with defaults for anything missing or blank. */
+export function headersOf(custom) {
+  const out = { ...DEFAULT_HEADERS };
+  for (const key of HEADER_KEYS) if (!isBlank(custom?.[key])) out[key] = String(custom[key]).trim();
+  return out;
+}
+
+/** Same names as the defaults (so nothing needs storing)? */
+export const isDefaultHeaders = (custom) => HEADER_KEYS.every((k) => headersOf(custom)[k] === DEFAULT_HEADERS[k]);
+
+/** Every column needs a name of its own (case-insensitive). */
+export function headersValid(custom) {
+  const names = HEADER_KEYS.map((k) => custom?.[k]);
+  if (names.some(isBlank)) return false;
+  return new Set(names.map(norm)).size === names.length;
+}
+
+const fillCurrency = (template, currency) => template.split(CURRENCY_TOKEN).join(String(currency ?? '').trim());
+
+export function expectedHeader(currency, headers) {
+  const h = headersOf(headers);
+  return HEADER_KEYS.map((k) => fillCurrency(h[k], currency));
+}
+
+/**
+ * Regex for the rate header ({currency} captured), or null when the name has no {currency}.
+ * The default name also accepts the short forms "USD/h" and "USD/hr".
+ */
+function rateMatcher(template) {
+  if (norm(template) === norm(DEFAULT_HEADERS.rate)) return /^(.+?)\/h(?:ou)?r?$/i;
+  const parts = squash(template).split(CURRENCY_TOKEN);
+  return parts.length < 2 ? null : new RegExp(`^${parts.map(escapeRe).join('(.+?)')}$`, 'i');
 }
 
 /**
  * Compare the sheet's header row with the structure expected for a clock's settings.
  * @param {Array<Array<*>>} values rows as returned by values.get (may be ragged)
+ * @param {object} [headers] the clock's header names (defaults when omitted)
  * @returns {{state: 'empty'|'ok'|'mismatch', issues: Array, readable: boolean}}
  *   readable: rows can still be interpreted (only the currency differs).
  */
-export function validateStructure(values, currency) {
+export function validateStructure(values, currency, headers) {
   const rows = values ?? [];
   if (rows.every((row) => (row ?? []).every(isBlank))) return { state: 'empty', issues: [], readable: false };
 
+  const h = headersOf(headers);
   const header = rows[0] ?? [];
-  const expected = expectedHeader(currency);
+  const expected = expectedHeader(currency, h);
   const issues = [];
   const found = (i) => (isBlank(header[i]) ? '' : String(header[i]).trim());
 
   for (const i of [COL.date, COL.hours, COL.rate, COL.sum, COL.paid]) {
-    if (i === COL.rate) {
-      const m = RATE_HEADER.exec(found(i));
-      if (m && norm(m[1]) === norm(currency)) continue;
-      issues.push({
-        column: COLUMN_LETTERS[i], expected: expected[i], found: found(i),
-        ...(m ? { kind: 'currency', sheetCurrency: m[1].trim() } : {}),
-      });
-    } else if (norm(header[i]) !== norm(expected[i])) {
-      issues.push({ column: COLUMN_LETTERS[i], expected: expected[i], found: found(i) });
-    }
+    if (norm(header[i]) === norm(expected[i])) continue;
+    const m = i === COL.rate ? rateMatcher(h.rate)?.exec(squash(found(i))) : null;
+    if (m && norm(m[1]) === norm(currency)) continue;
+    issues.push({
+      column: COLUMN_LETTERS[i], expected: expected[i], found: found(i),
+      ...(m ? { kind: 'currency', sheetCurrency: m[1].trim() } : {}),
+    });
   }
-  if (found(COL.comment) && !/^comments?$/i.test(found(COL.comment))) {
-    issues.push({ column: 'F', expected: expected[COL.comment], found: found(COL.comment), optional: true });
+  const comment = found(COL.comment);
+  if (comment && norm(comment) !== norm(expected[COL.comment]) && !/^comments?$/i.test(comment)) {
+    issues.push({ column: 'F', expected: expected[COL.comment], found: comment, optional: true });
   }
 
   // Issues are data ({column, expected, found, kind?, optional?}); the UI words them per language.
@@ -65,8 +105,123 @@ export function validateStructure(values, currency) {
   };
 }
 
-/** Sheets batchUpdate requests that set up an empty tab for a clock. */
-export function setupRequests(sheetId, currency) {
+/**
+ * Header names taken from an existing tab's first row (to adopt a table with the same column order).
+ * The currency inside the rate header becomes {currency}; blank cells keep the current names.
+ */
+export function headersFromSheet(headerRow, currency, current) {
+  const h = headersOf(current);
+  const out = { ...h };
+  HEADER_KEYS.forEach((key, i) => {
+    const cell = squash(headerRow?.[i]);
+    if (!cell) return;
+    if (key !== 'rate') {
+      out[key] = cell;
+      return;
+    }
+    const code = String(currency ?? '').trim();
+    const at = code ? cell.toLowerCase().indexOf(code.toLowerCase()) : -1;
+    if (at >= 0) out.rate = cell.slice(0, at) + CURRENCY_TOKEN + cell.slice(at + code.length);
+    else if (!rateMatcher(h.rate)?.test(cell)) out.rate = cell; // otherwise: other currency, keep the pattern
+  });
+  return out;
+}
+
+/** Write the header row (bold) with the clock's names. */
+export function headerRequest(sheetId, currency, headers) {
+  return {
+    updateCells: {
+      start: { sheetId, rowIndex: 0, columnIndex: 0 },
+      rows: [{
+        values: expectedHeader(currency, headers).map((v) => ({
+          userEnteredValue: { stringValue: v },
+          userEnteredFormat: { textFormat: { bold: true } },
+        })),
+      }],
+      fields: 'userEnteredValue,userEnteredFormat.textFormat.bold',
+    },
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Sheet view: newest first, paid rows hidden, totals in the header row.
+
+/** Row is paid in the sheet's own terms: TRUE (legacy checkbox) or a date. */
+const PAID_FORMULA = 'SIGN((E2:E=TRUE)+ISNUMBER(E2:E))';
+const sumWhere = (column, condition) => `=ARRAYFORMULA(SUM(IFERROR(ISNUMBER(A2:A)*${condition}*${column}2:${column},0)))`;
+
+/** First column of the totals block (H) and its cells: label, amount, hours × due/paid/total. */
+export const TOTALS_COLUMN = 7;
+export const TOTALS_RANGE = 'H1:P1';
+
+/**
+ * Basic filter on A–F: entries sorted by date, newest first, and paid rows hidden.
+ * In Sheets anyone can change or remove it from the header row.
+ */
+export function viewFilter(sheetId) {
+  return {
+    range: { sheetId, startRowIndex: 0, startColumnIndex: 0, endColumnIndex: COL.comment + 1 },
+    sortSpecs: [{ dimensionIndex: COL.date, sortOrder: 'DESCENDING' }],
+    filterSpecs: [{
+      columnIndex: COL.paid,
+      filterCriteria: { condition: { type: 'CUSTOM_FORMULA', values: [{ userEnteredValue: '=AND(E2<>TRUE,NOT(ISNUMBER(E2)))' }] } },
+    }],
+  };
+}
+
+/**
+ * (Re)apply a basic filter: Sheets does not re-sort or re-hide rows by itself after edits.
+ * @param {object} filter the filter to set (the tab's current one when refreshing)
+ * @param {boolean} hasFilter the tab already has one: clear it first so every row is sorted
+ */
+export function filterRequests(sheetId, filter, { hasFilter = false } = {}) {
+  const { criteria, ...withoutCriteria } = filter; // deprecated mirror of filterSpecs, rejected together with it
+  const clean = { ...(filter.filterSpecs ? withoutCriteria : filter), range: { ...filter.range, sheetId } };
+  const requests = hasFilter ? [{ clearBasicFilter: { sheetId } }] : [];
+  if (clean.sortSpecs?.length) {
+    const { startRowIndex = 0, endRowIndex, startColumnIndex = 0, endColumnIndex } = clean.range;
+    requests.push({
+      sortRange: {
+        range: { sheetId, startRowIndex: startRowIndex + 1, endRowIndex, startColumnIndex, endColumnIndex },
+        sortSpecs: clean.sortSpecs,
+      },
+    });
+  }
+  requests.push({ setBasicFilter: { filter: clean } });
+  return requests;
+}
+
+/**
+ * Totals in H1:P1, the same numbers as the report: due now (unpaid), paid, total — amount and hours.
+ * @param {{due: string, paid: string, total: string, hoursUnit: string}} labels in the UI language
+ */
+export function totalsRequest(sheetId, currency, labels) {
+  const text = (s) => String(s ?? '').replace(/"/g, '');
+  const label = (v) => ({ userEnteredValue: { stringValue: v }, userEnteredFormat: { textFormat: { bold: true } } });
+  const number = (formula, pattern) => ({
+    userEnteredValue: { formulaValue: formula },
+    userEnteredFormat: { numberFormat: { type: 'NUMBER', pattern }, textFormat: { bold: false } },
+  });
+  const money = `#,##0.00" ${text(currency)}"`;
+  const hours = `0.00" ${text(labels.hoursUnit)}"`;
+  const unpaid = `(1-${PAID_FORMULA})`;
+  return {
+    updateCells: {
+      start: { sheetId, rowIndex: 0, columnIndex: TOTALS_COLUMN },
+      rows: [{
+        values: [
+          label(labels.due), number(sumWhere('D', unpaid), money), number(sumWhere('B', unpaid), hours),
+          label(labels.paid), number(sumWhere('D', PAID_FORMULA), money), number(sumWhere('B', PAID_FORMULA), hours),
+          label(labels.total), number(sumWhere('D', '1'), money), number(sumWhere('B', '1'), hours),
+        ],
+      }],
+      fields: 'userEnteredValue,userEnteredFormat.numberFormat,userEnteredFormat.textFormat.bold',
+    },
+  };
+}
+
+/** Sheets batchUpdate requests that set up an empty tab for a clock (layout + view + totals). */
+export function setupRequests(sheetId, currency, { headers, totals } = {}) {
   const formatColumns = (start, end, numberFormat) => ({
     repeatCell: {
       range: { sheetId, startRowIndex: 1, startColumnIndex: start, endColumnIndex: end },
@@ -75,18 +230,7 @@ export function setupRequests(sheetId, currency) {
     },
   });
   return [
-    {
-      updateCells: {
-        start: { sheetId, rowIndex: 0, columnIndex: 0 },
-        rows: [{
-          values: expectedHeader(currency).map((v) => ({
-            userEnteredValue: { stringValue: v },
-            userEnteredFormat: { textFormat: { bold: true } },
-          })),
-        }],
-        fields: 'userEnteredValue,userEnteredFormat.textFormat.bold',
-      },
-    },
+    headerRequest(sheetId, currency, headers),
     {
       updateSheetProperties: {
         properties: { sheetId, gridProperties: { frozenRowCount: 1 } },
@@ -96,6 +240,8 @@ export function setupRequests(sheetId, currency) {
     formatColumns(COL.date, COL.date + 1, DATE_FORMAT),
     formatColumns(COL.hours, COL.sum + 1, NUMBER_FORMAT),
     formatColumns(COL.paid, COL.paid + 1, DATE_FORMAT),
+    { setBasicFilter: { filter: viewFilter(sheetId) } },
+    ...(totals ? [totalsRequest(sheetId, currency, totals)] : []),
   ];
 }
 

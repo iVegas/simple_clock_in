@@ -24,6 +24,7 @@ const ASSETS = [
   './src/router.js',
   './src/version.js',
   './src/components/App.js',
+  './src/components/ClockAdvanced.js',
   './src/components/Banners.js',
   './src/components/ClockEditor.js',
   './src/components/ClockView.js',

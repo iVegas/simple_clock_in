@@ -57,7 +57,10 @@
   "report": {
     "dueNow": "Jetzt fällig",
     "refresh": "Aus der Tabelle aktualisieren",
-    "dueSummary": { "one": "{hours} · {count} unbezahlter Tag", "other": "{hours} · {count} unbezahlte Tage" },
+    "dueSummary": {
+      "one": "{hours} · {count} unbezahlter Tag",
+      "other": "{hours} · {count} unbezahlte Tage"
+    },
     "updated": "aktualisiert {time}",
     "pending": {
       "one": "{count} Eintrag wartet auf Synchronisierung und ist noch nicht enthalten.",
@@ -130,7 +133,10 @@
     "deleteConfirm": "Nochmals tippen zum Löschen",
     "deleteConfirmLoss": "Nochmals tippen zum Löschen (Verlust: {what})",
     "lossRunning": "die laufende Sitzung",
-    "lossPending": { "one": "{count} nicht synchronisierter Eintrag", "other": "{count} nicht synchronisierte Einträge" },
+    "lossPending": {
+      "one": "{count} nicht synchronisierter Eintrag",
+      "other": "{count} nicht synchronisierte Einträge"
+    },
     "deleted": "„{name}“ gelöscht. Die Tabelle bleibt unverändert.",
     "add": "Uhr hinzufügen"
   },
@@ -211,7 +217,37 @@
     "timesheetTitle": "{name} – Stundenzettel",
     "created": "Neue Tabelle in deinem Google Drive erstellt.",
     "ready": "„{name}“ ist bereit.",
-    "saved": "Uhr gespeichert."
+    "saved": "Uhr gespeichert.",
+    "advanced": "Erweiterte Einstellungen",
+    "headersTitle": "Spaltenüberschriften",
+    "headersHint": "Benenne die Kopfzeile um, z. B. passend zu einer bestehenden Tabelle oder in deiner Sprache. Die Spaltenreihenfolge bleibt A–F.",
+    "roleDate": "Datum",
+    "roleHours": "Stunden",
+    "roleRate": "Stundensatz",
+    "roleSum": "Betrag (Stunden × Satz)",
+    "rolePaid": "Bezahlt (Auszahlungsdatum)",
+    "roleComment": "Kommentar",
+    "rateHint": "{token} im Namen der Satz-Spalte wird durch die Währung der Uhr ersetzt.",
+    "errHeaders": "Jede Spalte braucht einen eigenen Namen.",
+    "fillIn": "Ausfüllen:",
+    "fromTab": "Aus diesem Blatt",
+    "sameColumns": "Gleiche Spalten mit anderen Namen?",
+    "useTabNames": "Namen aus diesem Blatt übernehmen",
+    "renameHeader": "Nur die Spaltennamen weichen ab. Beim Speichern wird die Kopfzeile des Blatts umbenannt in:",
+    "headerRenamed": "Kopfzeile in der Tabelle umbenannt.",
+    "viewTitle": "Tabellenansicht",
+    "viewHint": "Neueste Einträge oben, bezahlte per Filter ausgeblendet (jeder kann ihn in der Kopfzeile in Sheets ändern) und Summen in {range}. Neue Blätter bekommen das automatisch.",
+    "applyView": "Auf dieses Blatt anwenden",
+    "viewNeedsLayout": "Verfügbar, sobald das Blatt zum Aufbau passt.",
+    "viewApplied": "Ansicht angewendet: neueste oben, bezahlte ausgeblendet, Summen in {range}."
+  },
+  "sheetHeaders": {
+    "date": "Datum",
+    "hours": "Stunden",
+    "rate": "{currency}/Std.",
+    "sum": "Summe",
+    "paid": "Bezahlt",
+    "comment": "Kommentar"
   },
   "setup": {
     "tagline": "Arbeitszeit mit einem Tipp erfassen. Jede Sitzung landet direkt in deiner Google-Tabelle.",
@@ -225,7 +261,10 @@
     "openSheet": "Tabelle öffnen",
     "recheck": "Erneut prüfen",
     "clockSettings": "Uhr-Einstellungen",
-    "fixedSynced": { "one": "Aufbau korrigiert. {count} Eintrag synchronisiert.", "other": "Aufbau korrigiert. {count} Einträge synchronisiert." },
+    "fixedSynced": {
+      "one": "Aufbau korrigiert. {count} Eintrag synchronisiert.",
+      "other": "Aufbau korrigiert. {count} Einträge synchronisiert."
+    },
     "matches": "Der Aufbau passt jetzt.",
     "stillWrong": "Der Aufbau passt immer noch nicht."
   },
@@ -236,9 +275,15 @@
   },
   "sync": {
     "syncing": "Wird synchronisiert…",
-    "waiting": { "one": "{count} Eintrag ({hours}) wartet auf Synchronisierung", "other": "{count} Einträge ({hours}) warten auf Synchronisierung" },
+    "waiting": {
+      "one": "{count} Eintrag ({hours}) wartet auf Synchronisierung",
+      "other": "{count} Einträge ({hours}) warten auf Synchronisierung"
+    },
     "now": "Jetzt synchronisieren",
-    "synced": { "one": "{count} Eintrag synchronisiert.", "other": "{count} Einträge synchronisiert." },
+    "synced": {
+      "one": "{count} Eintrag synchronisiert.",
+      "other": "{count} Einträge synchronisiert."
+    },
     "blocked": "Der Tabellenaufbau muss korrigiert werden; Einträge bleiben auf diesem Gerät."
   },
   "error": {

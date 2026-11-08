@@ -437,6 +437,36 @@ legend + * { clear: both; }
 
 .empty { text-align: center; padding: 24px 0; }
 
+/* ---------------------------------------------------------------- advanced clock settings */
+
+.advanced {
+  padding: 0;
+  summary {
+    padding: 14px 16px;
+    font-weight: 700;
+    cursor: pointer;
+    border-radius: var(--radius);
+    &:focus-visible { outline: 3px solid color-mix(in srgb, var(--primary) 45%, transparent); }
+  }
+  &[open] summary { border-bottom: 1px solid var(--border); border-radius: var(--radius) var(--radius) 0 0; }
+}
+.advanced-body { display: grid; gap: 18px; padding: 14px 16px 16px; }
+.advanced-group {
+  display: grid;
+  gap: 10px;
+  h3 { margin: 0; font-size: .95rem; }
+}
+.headers-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 12px; }
+.col-letter {
+  display: inline-grid;
+  place-items: center;
+  min-width: 1.4em;
+  margin-right: .2em;
+  border-radius: 5px;
+  background: var(--surface-2);
+  font-size: .8rem;
+}
+
 /* ---------------------------------------------------------------- modal (native <dialog>) */
 
 .modal {
@@ -674,7 +704,7 @@ legend + * { clear: both; }
 @keyframes toast-in { from { opacity: 0; translate: 0 8px; } }
 
 @media (max-width: 380px) {
-  .field-row { grid-template-columns: 1fr; }
+  .field-row, .headers-grid { grid-template-columns: 1fr; }
   .totals { grid-template-columns: 1fr 1fr; }
 }
 

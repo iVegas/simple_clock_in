@@ -3,7 +3,7 @@ import { ApiError } from './errors.js';
 import { sleep } from './util.js';
 
 const BASE = 'https://sheets.googleapis.com/v4/spreadsheets';
-const META_FIELDS = 'spreadsheetId,properties(title,locale),sheets(properties(sheetId,title,index,gridProperties(rowCount,columnCount)))';
+const META_FIELDS = 'spreadsheetId,properties(title,locale),sheets(properties(sheetId,title,index,gridProperties(rowCount,columnCount)),basicFilter)';
 
 /** 'My tab' -> "'My tab'" for A1 ranges. */
 export const quoteSheet = (title) => `'${String(title).replace(/'/g, "''")}'`;
@@ -17,12 +17,13 @@ export function normalizeMeta(json) {
     id: json.spreadsheetId,
     title: json.properties?.title ?? '',
     locale: json.properties?.locale ?? '',
-    tabs: (json.sheets ?? []).map(({ properties: p }) => ({
+    tabs: (json.sheets ?? []).map(({ properties: p, basicFilter }) => ({
       sheetId: p.sheetId,
       title: p.title,
       index: p.index,
       rowCount: p.gridProperties?.rowCount ?? 1000,
       columnCount: p.gridProperties?.columnCount ?? 26,
+      basicFilter: basicFilter ?? null, // re-applied after writes (sort + hidden rows)
     })),
   };
 }

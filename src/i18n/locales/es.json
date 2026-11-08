@@ -57,7 +57,10 @@
   "report": {
     "dueNow": "Pendiente de pago",
     "refresh": "Actualizar desde la hoja",
-    "dueSummary": { "one": "{hours} · {count} día sin pagar", "other": "{hours} · {count} días sin pagar" },
+    "dueSummary": {
+      "one": "{hours} · {count} día sin pagar",
+      "other": "{hours} · {count} días sin pagar"
+    },
     "updated": "actualizado a las {time}",
     "pending": {
       "one": "{count} registro pendiente de sincronizar aún no está incluido.",
@@ -130,7 +133,10 @@
     "deleteConfirm": "Toca de nuevo para eliminar",
     "deleteConfirmLoss": "Toca de nuevo para eliminar — se perderá: {what}",
     "lossRunning": "la sesión en curso",
-    "lossPending": { "one": "{count} registro sin sincronizar", "other": "{count} registros sin sincronizar" },
+    "lossPending": {
+      "one": "{count} registro sin sincronizar",
+      "other": "{count} registros sin sincronizar"
+    },
     "deleted": "«{name}» eliminado. Su hoja no se ha modificado.",
     "add": "Añadir reloj"
   },
@@ -211,7 +217,37 @@
     "timesheetTitle": "{name} – hoja de horas",
     "created": "Hoja nueva creada en tu Google Drive.",
     "ready": "«{name}» está listo.",
-    "saved": "Reloj guardado."
+    "saved": "Reloj guardado.",
+    "advanced": "Ajustes avanzados",
+    "headersTitle": "Encabezados de columna",
+    "headersHint": "Cambia los nombres de la fila de encabezado, por ejemplo para que coincidan con una tabla existente o con tu idioma. El orden de las columnas sigue siendo A–F.",
+    "roleDate": "Fecha",
+    "roleHours": "Horas",
+    "roleRate": "Tarifa por hora",
+    "roleSum": "Importe (horas × tarifa)",
+    "rolePaid": "Pagado (fecha de pago)",
+    "roleComment": "Comentario",
+    "rateHint": "{token} en el nombre de la columna de tarifa se sustituye por la moneda del reloj.",
+    "errHeaders": "Cada columna necesita su propio nombre.",
+    "fillIn": "Rellenar:",
+    "fromTab": "De esta pestaña",
+    "sameColumns": "¿Las mismas columnas con otros nombres?",
+    "useTabNames": "Usar los nombres de esta pestaña",
+    "renameHeader": "Solo difieren los nombres de las columnas. Al guardar, la fila de encabezado de la pestaña pasará a ser:",
+    "headerRenamed": "Fila de encabezado renombrada en la hoja.",
+    "viewTitle": "Vista de la hoja",
+    "viewHint": "Registros más recientes arriba, los pagados ocultos con un filtro (cualquiera puede cambiarlo desde la fila de encabezado en Sheets) y totales en {range}. Las pestañas nuevas lo reciben automáticamente.",
+    "applyView": "Aplicar a esta pestaña",
+    "viewNeedsLayout": "Disponible cuando la pestaña coincida con la estructura.",
+    "viewApplied": "Vista aplicada: más recientes arriba, pagados ocultos, totales en {range}."
+  },
+  "sheetHeaders": {
+    "date": "Fecha",
+    "hours": "Horas",
+    "rate": "{currency}/h",
+    "sum": "Importe",
+    "paid": "Pagado",
+    "comment": "Comentario"
   },
   "setup": {
     "tagline": "Registra tu tiempo de trabajo con un toque. Cada sesión va directa a tu hoja de Google.",
@@ -225,7 +261,10 @@
     "openSheet": "Abrir hoja",
     "recheck": "Volver a comprobar",
     "clockSettings": "Ajustes del reloj",
-    "fixedSynced": { "one": "Estructura corregida. {count} registro sincronizado.", "other": "Estructura corregida. {count} registros sincronizados." },
+    "fixedSynced": {
+      "one": "Estructura corregida. {count} registro sincronizado.",
+      "other": "Estructura corregida. {count} registros sincronizados."
+    },
     "matches": "La estructura ya coincide.",
     "stillWrong": "La estructura sigue sin coincidir."
   },
@@ -236,9 +275,15 @@
   },
   "sync": {
     "syncing": "Sincronizando…",
-    "waiting": { "one": "{count} registro ({hours}) pendiente de sincronizar", "other": "{count} registros ({hours}) pendientes de sincronizar" },
+    "waiting": {
+      "one": "{count} registro ({hours}) pendiente de sincronizar",
+      "other": "{count} registros ({hours}) pendientes de sincronizar"
+    },
     "now": "Sincronizar ahora",
-    "synced": { "one": "{count} registro sincronizado.", "other": "{count} registros sincronizados." },
+    "synced": {
+      "one": "{count} registro sincronizado.",
+      "other": "{count} registros sincronizados."
+    },
     "blocked": "Hay que corregir la estructura de la hoja; los registros se guardan en este dispositivo."
   },
   "error": {

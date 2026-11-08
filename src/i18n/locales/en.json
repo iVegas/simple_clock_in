@@ -57,7 +57,10 @@
   "report": {
     "dueNow": "Due now",
     "refresh": "Refresh from sheet",
-    "dueSummary": { "one": "{hours} · {count} unpaid day", "other": "{hours} · {count} unpaid days" },
+    "dueSummary": {
+      "one": "{hours} · {count} unpaid day",
+      "other": "{hours} · {count} unpaid days"
+    },
     "updated": "updated {time}",
     "pending": {
       "one": "{count} entry waiting to sync is not included yet.",
@@ -130,7 +133,10 @@
     "deleteConfirm": "Tap again to delete",
     "deleteConfirmLoss": "Tap again to delete — {what} will be lost",
     "lossRunning": "the running session",
-    "lossPending": { "one": "{count} unsynced entry", "other": "{count} unsynced entries" },
+    "lossPending": {
+      "one": "{count} unsynced entry",
+      "other": "{count} unsynced entries"
+    },
     "deleted": "“{name}” deleted. Its spreadsheet was not touched.",
     "add": "Add clock"
   },
@@ -211,7 +217,37 @@
     "timesheetTitle": "{name} – timesheet",
     "created": "New spreadsheet created in your Google Drive.",
     "ready": "“{name}” is ready.",
-    "saved": "Clock saved."
+    "saved": "Clock saved.",
+    "advanced": "Advanced settings",
+    "headersTitle": "Column headers",
+    "headersHint": "Rename the header row, for example to match an existing table or to use your language. The columns stay in the order A–F.",
+    "roleDate": "Date",
+    "roleHours": "Hours",
+    "roleRate": "Hourly rate",
+    "roleSum": "Amount (hours × rate)",
+    "rolePaid": "Paid (payout date)",
+    "roleComment": "Comment",
+    "rateHint": "{token} in the rate column’s name is replaced by the clock’s currency.",
+    "errHeaders": "Every column needs a name of its own.",
+    "fillIn": "Fill in:",
+    "fromTab": "From this tab",
+    "sameColumns": "Same columns under other names?",
+    "useTabNames": "Use this tab’s names",
+    "renameHeader": "Only the column names differ. On save, the tab’s header row is renamed to:",
+    "headerRenamed": "Header row renamed in the sheet.",
+    "viewTitle": "Sheet view",
+    "viewHint": "Newest entries first, paid entries hidden by a filter (anyone can change it from the header row in Sheets), and totals in {range}. New tabs get this automatically.",
+    "applyView": "Apply to this tab",
+    "viewNeedsLayout": "Available once the tab matches the layout.",
+    "viewApplied": "Sheet view applied: newest first, paid hidden, totals in {range}."
+  },
+  "sheetHeaders": {
+    "date": "Date",
+    "hours": "Hours",
+    "rate": "{currency}/hour",
+    "sum": "sum",
+    "paid": "paid",
+    "comment": "comment"
   },
   "setup": {
     "tagline": "Track working time with one tap. Every session goes straight into your Google Sheet.",
@@ -225,7 +261,10 @@
     "openSheet": "Open sheet",
     "recheck": "Re-check",
     "clockSettings": "Clock settings",
-    "fixedSynced": { "one": "Layout fixed. Synced {count} entry.", "other": "Layout fixed. Synced {count} entries." },
+    "fixedSynced": {
+      "one": "Layout fixed. Synced {count} entry.",
+      "other": "Layout fixed. Synced {count} entries."
+    },
     "matches": "Layout matches now.",
     "stillWrong": "The layout still does not match."
   },
@@ -236,9 +275,15 @@
   },
   "sync": {
     "syncing": "Syncing…",
-    "waiting": { "one": "{count} entry ({hours}) waiting to sync", "other": "{count} entries ({hours}) waiting to sync" },
+    "waiting": {
+      "one": "{count} entry ({hours}) waiting to sync",
+      "other": "{count} entries ({hours}) waiting to sync"
+    },
     "now": "Sync now",
-    "synced": { "one": "Synced {count} entry.", "other": "Synced {count} entries." },
+    "synced": {
+      "one": "Synced {count} entry.",
+      "other": "Synced {count} entries."
+    },
     "blocked": "Sheet layout needs fixing; entries are kept on this device."
   },
   "error": {

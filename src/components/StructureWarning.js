@@ -22,7 +22,7 @@ export default {
   setup(props) {
     const busy = ref(false);
     const visible = computed(() => props.clock.structure?.state === 'mismatch');
-    const expected = computed(() => expectedHeader(props.clock.currency).join(' | '));
+    const expected = computed(() => expectedHeader(props.clock.currency, props.clock.headers).join(' | '));
     const url = computed(() => spreadsheetUrl(props.clock.spreadsheetId, props.clock.sheetId));
 
     async function recheck() {

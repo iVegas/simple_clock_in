@@ -2,6 +2,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   validateStructure, expectedHeader, setupRequests, deleteRowRequest, rowMatches,
+  headersOf, headersValid, isDefaultHeaders, headersFromSheet, headerRequest,
+  viewFilter, filterRequests, totalsRequest, TOTALS_COLUMN,
   serialToISO, isoToSerial, parseDateCell, parsePaid, toNumber,
   parseRecords, lastDataRow, planSession, markPaidRequest, clearPaidRequest,
   summarize, hoursOn,
@@ -264,4 +266,104 @@ test('summarize: month filter applies to list and totals, not to due now', () =>
 test('summarize: paid view groups by payout date, legacy (undated) last', () => {
   const r = summarize(parseRecords(SHEET), { status: 'paid' });
   assert.deepEqual(r.payouts.map((p) => [p.date, p.amount]), [['2026-10-31', 100], [null, 240]]);
+});
+
+// ---------------------------------------------------------------------------
+// Custom header names
+
+const UK = { date: 'Дата', hours: 'Години', rate: 'Ставка, {currency}/год', sum: 'Сума', paid: 'Оплачено', comment: 'Коментар' };
+
+test('custom header names define the expected header (currency filled in)', () => {
+  assert.deepEqual(expectedHeader('UAH', UK), ['Дата', 'Години', 'Ставка, UAH/год', 'Сума', 'Оплачено', 'Коментар']);
+  assert.equal(validateStructure([['дата', 'ГОДИНИ', 'Ставка, uah / год', 'Сума', 'Оплачено', '']], 'UAH', UK).state, 'ok');
+  // ...and the default English names no longer match that clock.
+  assert.equal(validateStructure([HEADER], 'UAH', UK).state, 'mismatch');
+});
+
+test('custom rate name: another currency is reported as a currency issue', () => {
+  const res = validateStructure([['Дата', 'Години', 'Ставка, USD/год', 'Сума', 'Оплачено']], 'UAH', UK);
+  assert.deepEqual(res.issues, [{ column: 'C', expected: 'Ставка, UAH/год', found: 'Ставка, USD/год', kind: 'currency', sheetCurrency: 'USD' }]);
+  assert.equal(res.readable, true);
+});
+
+test('rate name without {currency} is compared literally', () => {
+  const h = { ...UK, rate: 'Ставка' };
+  assert.equal(validateStructure([['Дата', 'Години', 'ставка', 'Сума', 'Оплачено']], 'UAH', h).state, 'ok');
+  const res = validateStructure([['Дата', 'Години', 'Rate', 'Сума', 'Оплачено']], 'UAH', h);
+  assert.equal(res.issues[0].kind, undefined);
+});
+
+test('custom comment name or blank F header is fine', () => {
+  assert.equal(validateStructure([['Дата', 'Години', 'Ставка, UAH/год', 'Сума', 'Оплачено', 'Коментар']], 'UAH', UK).state, 'ok');
+  assert.equal(validateStructure([['Дата', 'Години', 'Ставка, UAH/год', 'Сума', 'Оплачено', 'Нотатки']], 'UAH', UK).state, 'mismatch');
+});
+
+test('headersOf / isDefaultHeaders / headersValid', () => {
+  assert.equal(headersOf({ sum: '  ', paid: 'Paid on' }).sum, 'sum');
+  assert.equal(headersOf({ paid: 'Paid on' }).paid, 'Paid on');
+  assert.equal(isDefaultHeaders(null), true);
+  assert.equal(isDefaultHeaders({ date: 'Date' }), true);
+  assert.equal(isDefaultHeaders(UK), false);
+  assert.equal(headersValid(UK), true);
+  assert.equal(headersValid({ ...UK, sum: 'дата' }), false); // duplicates (case-insensitive)
+  assert.equal(headersValid({ ...UK, comment: '' }), false);
+});
+
+test('headersFromSheet adopts an existing header row', () => {
+  // The clock's currency inside the rate header becomes {currency}.
+  assert.deepEqual(headersFromSheet(['Day', 'Time', 'UAH per hour', 'Total', 'Paid on', ''], 'UAH'),
+    { date: 'Day', hours: 'Time', rate: '{currency} per hour', sum: 'Total', paid: 'Paid on', comment: 'comment' });
+  // Another currency in the default pattern keeps the pattern (the currency issue then shows).
+  assert.equal(headersFromSheet(['Date', 'Hours', 'USD/hour'], 'EUR').rate, '{currency}/hour');
+  // Adopted names validate against that row.
+  const row = ['Day', 'Time', 'uah per hour', 'Total', 'Paid on'];
+  assert.equal(validateStructure([row], 'UAH', headersFromSheet(row, 'UAH')).state, 'ok');
+});
+
+test('headerRequest writes the names in bold into A1:F1', () => {
+  const req = headerRequest(5, 'EUR', UK).updateCells;
+  assert.deepEqual(req.start, { sheetId: 5, rowIndex: 0, columnIndex: 0 });
+  assert.deepEqual(req.rows[0].values.map((v) => v.userEnteredValue.stringValue), expectedHeader('EUR', UK));
+});
+
+// ---------------------------------------------------------------------------
+// Sheet view + totals
+
+test('viewFilter sorts by date (newest first) and hides paid rows on A–F', () => {
+  const f = viewFilter(9);
+  assert.deepEqual(f.range, { sheetId: 9, startRowIndex: 0, startColumnIndex: 0, endColumnIndex: 6 });
+  assert.deepEqual(f.sortSpecs, [{ dimensionIndex: 0, sortOrder: 'DESCENDING' }]);
+  assert.equal(f.filterSpecs[0].columnIndex, 4);
+  assert.match(f.filterSpecs[0].filterCriteria.condition.values[0].userEnteredValue, /E2<>TRUE/);
+});
+
+test('setupRequests sets the view and, when labels are given, the totals', () => {
+  const plain = setupRequests(7, 'EUR');
+  assert.ok(plain.some((r) => r.setBasicFilter));
+  assert.ok(!plain.some((r) => r.updateCells?.start?.columnIndex === TOTALS_COLUMN));
+  const labels = { due: 'Due now', paid: 'Paid', total: 'Total', hoursUnit: 'hr' };
+  assert.ok(setupRequests(7, 'EUR', { totals: labels }).some((r) => r.updateCells?.start?.columnIndex === TOTALS_COLUMN));
+});
+
+test('filterRequests re-applies an existing filter: clear, sort data rows, set (without legacy criteria)', () => {
+  const existing = { ...viewFilter(3), criteria: { 4: { condition: {} } } };
+  const reqs = filterRequests(3, existing, { hasFilter: true });
+  assert.deepEqual(reqs.map((r) => Object.keys(r)[0]), ['clearBasicFilter', 'sortRange', 'setBasicFilter']);
+  assert.equal(reqs[1].sortRange.range.startRowIndex, 1); // header stays on top
+  assert.equal(reqs[2].setBasicFilter.filter.criteria, undefined);
+  // A filter without sorting (changed in Sheets) is re-applied as is.
+  const unsorted = { range: { sheetId: 3, startRowIndex: 0 }, filterSpecs: [] };
+  assert.deepEqual(filterRequests(3, unsorted).map((r) => Object.keys(r)[0]), ['setBasicFilter']);
+});
+
+test('totalsRequest: due / paid / total, amount and hours, in H1:P1', () => {
+  const req = totalsRequest(2, 'USD', { due: 'Due now', paid: 'Paid', total: 'Total', hoursUnit: 'hr' }).updateCells;
+  assert.deepEqual(req.start, { sheetId: 2, rowIndex: 0, columnIndex: 7 });
+  const cells = req.rows[0].values;
+  assert.equal(cells.length, 9);
+  assert.deepEqual([0, 3, 6].map((i) => cells[i].userEnteredValue.stringValue), ['Due now', 'Paid', 'Total']);
+  assert.match(cells[1].userEnteredValue.formulaValue, /^=ARRAYFORMULA\(SUM\(.*\(1-SIGN\(\(E2:E=TRUE\)\+ISNUMBER\(E2:E\)\)\)\*D2:D/);
+  assert.match(cells[5].userEnteredValue.formulaValue, /\*B2:B/);
+  assert.equal(cells[7].userEnteredFormat.numberFormat.pattern, '#,##0.00" USD"');
+  assert.equal(cells[8].userEnteredFormat.numberFormat.pattern, '0.00" hr"');
 });

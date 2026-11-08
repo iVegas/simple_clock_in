@@ -57,7 +57,10 @@
   "report": {
     "dueNow": "A pagar",
     "refresh": "Atualizar da planilha",
-    "dueSummary": { "one": "{hours} · {count} dia não pago", "other": "{hours} · {count} dias não pagos" },
+    "dueSummary": {
+      "one": "{hours} · {count} dia não pago",
+      "other": "{hours} · {count} dias não pagos"
+    },
     "updated": "atualizado às {time}",
     "pending": {
       "one": "{count} registro aguardando sincronização ainda não está incluído.",
@@ -130,7 +133,10 @@
     "deleteConfirm": "Toque de novo para excluir",
     "deleteConfirmLoss": "Toque de novo para excluir — será perdido: {what}",
     "lossRunning": "a sessão em andamento",
-    "lossPending": { "one": "{count} registro não sincronizado", "other": "{count} registros não sincronizados" },
+    "lossPending": {
+      "one": "{count} registro não sincronizado",
+      "other": "{count} registros não sincronizados"
+    },
     "deleted": "“{name}” excluído. A planilha não foi alterada.",
     "add": "Adicionar relógio"
   },
@@ -211,7 +217,37 @@
     "timesheetTitle": "{name} – planilha de horas",
     "created": "Nova planilha criada no seu Google Drive.",
     "ready": "“{name}” está pronto.",
-    "saved": "Relógio salvo."
+    "saved": "Relógio salvo.",
+    "advanced": "Configurações avançadas",
+    "headersTitle": "Cabeçalhos das colunas",
+    "headersHint": "Renomeie a linha de cabeçalho, por exemplo para combinar com uma tabela existente ou com o seu idioma. A ordem das colunas continua A–F.",
+    "roleDate": "Data",
+    "roleHours": "Horas",
+    "roleRate": "Valor por hora",
+    "roleSum": "Total (horas × valor)",
+    "rolePaid": "Pago (data do pagamento)",
+    "roleComment": "Comentário",
+    "rateHint": "{token} no nome da coluna do valor é substituído pela moeda do relógio.",
+    "errHeaders": "Cada coluna precisa de um nome próprio.",
+    "fillIn": "Preencher:",
+    "fromTab": "Desta aba",
+    "sameColumns": "As mesmas colunas com outros nomes?",
+    "useTabNames": "Usar os nomes desta aba",
+    "renameHeader": "Só os nomes das colunas são diferentes. Ao salvar, a linha de cabeçalho da aba será renomeada para:",
+    "headerRenamed": "Linha de cabeçalho renomeada na planilha.",
+    "viewTitle": "Visualização da planilha",
+    "viewHint": "Registros mais recentes no topo, pagos ocultos por um filtro (qualquer pessoa pode alterá-lo na linha de cabeçalho no Planilhas) e totais em {range}. Abas novas recebem isso automaticamente.",
+    "applyView": "Aplicar a esta aba",
+    "viewNeedsLayout": "Disponível quando a aba corresponder à estrutura.",
+    "viewApplied": "Visualização aplicada: mais recentes no topo, pagos ocultos, totais em {range}."
+  },
+  "sheetHeaders": {
+    "date": "Data",
+    "hours": "Horas",
+    "rate": "{currency}/h",
+    "sum": "Total",
+    "paid": "Pago",
+    "comment": "Comentário"
   },
   "setup": {
     "tagline": "Registre seu tempo de trabalho com um toque. Cada sessão vai direto para a sua Planilha Google.",
@@ -225,7 +261,10 @@
     "openSheet": "Abrir planilha",
     "recheck": "Verificar de novo",
     "clockSettings": "Configurações do relógio",
-    "fixedSynced": { "one": "Estrutura corrigida. {count} registro sincronizado.", "other": "Estrutura corrigida. {count} registros sincronizados." },
+    "fixedSynced": {
+      "one": "Estrutura corrigida. {count} registro sincronizado.",
+      "other": "Estrutura corrigida. {count} registros sincronizados."
+    },
     "matches": "A estrutura agora confere.",
     "stillWrong": "A estrutura ainda não confere."
   },
@@ -236,9 +275,15 @@
   },
   "sync": {
     "syncing": "Sincronizando…",
-    "waiting": { "one": "{count} registro ({hours}) aguardando sincronização", "other": "{count} registros ({hours}) aguardando sincronização" },
+    "waiting": {
+      "one": "{count} registro ({hours}) aguardando sincronização",
+      "other": "{count} registros ({hours}) aguardando sincronização"
+    },
     "now": "Sincronizar agora",
-    "synced": { "one": "{count} registro sincronizado.", "other": "{count} registros sincronizados." },
+    "synced": {
+      "one": "{count} registro sincronizado.",
+      "other": "{count} registros sincronizados."
+    },
     "blocked": "A estrutura da planilha precisa de correção; os registros ficam neste dispositivo."
   },
   "error": {

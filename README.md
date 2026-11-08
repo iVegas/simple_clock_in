@@ -6,8 +6,8 @@ copies get their updates.
 
 - **Clock in / Clock out**. Clock out unlocks once the *minimum tracked time* has passed.
   Every session is rounded **up** to a multiple of that time.
-- **Multiple clocks** (one per client/job). Each has its own currency, hourly rate, minimum time
-  and sheet tab, and they can run at the same time.
+- **Multiple clocks** (one per client/job). Each has its own currency, hourly rate, minimum time,
+  sheet tab and header names, and they can run at the same time.
 - **Report**: what is *due now*, filters by month and paid status, payouts grouped by date,
   and a **Mark paid** button that writes today's date into the sheet (with Undo). Tap an entry to
   **cancel its payment** or **delete** it; both ask for confirmation first.
@@ -41,11 +41,37 @@ Each clock writes to one tab with this layout (row 1 = header):
 - **paid** holds the payout date. Older `TRUE`/`FALSE` (checkbox) values are still understood:
   `TRUE` counts as paid with no date. Marking a legacy checkbox row as paid replaces the checkbox
   with a date.
-- If you point a clock at an **empty tab**, the app sets up the header (using the clock's
-  currency), freezes row 1 and applies number/date formats.
+- If you point a clock at an **empty tab**, the app sets it up from the clock's settings: header
+  row (bold, frozen), number/date formats, the sheet view and the totals described below.
 - If the tab **doesn't match** (for example the header says `USD/hour` but the clock uses EUR),
   a warning lists what is expected and what was found. Syncing pauses, sessions stay queued on the
   device, and the warning stays until the sheet or the clock settings are fixed.
+
+### Header names (clock settings → Advanced settings)
+
+The columns always stay in the order A–F, but their names can be changed per clock: to match an
+existing table that uses other names, or to have the sheet in your language.
+
+- **Fill in** with the names in the app's language, the English defaults, or **from this tab**
+  (takes the tab's current header row; the currency inside the rate name becomes `{currency}`).
+  When an existing tab only differs by its names, the warning offers *Use this tab's names*.
+- `{currency}` in the rate name is replaced by the clock's currency, e.g. `Ставка, {currency}/год`.
+  The app still notices when the sheet's header names another currency.
+- If the tab matched the previous names and only the names change, saving renames the tab's
+  header row. Changing the currency never rewrites the header, because the rates already in
+  column C are in the old currency.
+
+### Sheet view and totals
+
+New tabs (and existing ones, with *Advanced settings → Apply to this tab*) get:
+
+- a **filter on the header row** that sorts entries by date, newest first, and hides paid rows
+  (`TRUE` or a date in *paid*). Anyone can change or remove it in Sheets with the header's filter
+  buttons. Sheets doesn't re-sort or re-filter by itself, so after each write the app re-applies
+  whatever filter the tab has; a tab without a filter is left alone.
+- **totals in `H1:P1`** with the report's numbers: due now (unpaid), paid and total, each as
+  amount and hours. They are formulas, so everyone with access sees the same numbers without
+  the app. In the sheet a row counts as paid when *paid* holds `TRUE` or a date.
 
 ## Try it without Google
 

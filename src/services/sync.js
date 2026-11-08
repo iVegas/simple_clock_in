@@ -7,7 +7,7 @@ import { t } from '../i18n/index.js';
 import { uid } from './util.js';
 import { formatHours, formatDay } from '../domain/format.js';
 import { describeError } from './errors.js';
-import { loadSheet, setupSheet, recordSession } from './timesheet.js';
+import { loadSheet, setupSheet, recordSession, refreshSheetView } from './timesheet.js';
 
 /** Per-clock UI state: { busy, error (code), message, at }. Not persisted. */
 export const syncState = reactive({});
@@ -46,7 +46,7 @@ async function run(clockId, { interactive = false } = {}) {
   try {
     let sheet = await loadSheet(clock, opts);
     if (sheet.structure.state === 'empty') {
-      await setupSheet(clock.spreadsheetId, sheet.tab.sheetId, clock.currency, opts);
+      await setupSheet(clock.spreadsheetId, sheet.tab.sheetId, clock, opts);
       sheet = await loadSheet(clock, opts);
     }
 
@@ -58,13 +58,15 @@ async function run(clockId, { interactive = false } = {}) {
     }
     for (const item of items) {
       const alreadyWritten = !!item.expect && sheet.records.some(
-        (r) => r.row === item.expect.row && r.date === item.expect.date && r.hours === item.expect.hours,
+        (r) => !r.paid.paid && r.date === item.expect.date && r.hours === item.expect.hours,
       );
       if (!alreadyWritten) await recordSession(clock, sheet, item, opts);
       removePending(item.id);
       synced++;
       sheet = await loadSheet(clock, opts);
     }
+    // New rows go to the bottom: let the tab's filter sort them in (and reload the new row numbers).
+    if (synced && await refreshSheetView(clock, opts)) await loadSheet(clock, opts);
     Object.assign(st, { error: null, message: '', at: Date.now() });
     return { status: 'ok', synced };
   } catch (err) {
